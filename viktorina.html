@@ -253,7 +253,8 @@
     <p style="font-size:11.5px;color:var(--muted);line-height:1.5;margin-bottom:16px;">
       🔒 Jūsų vardas, pavardė, el. paštas ir telefonas yra konfidencialūs — juos matys tik parodos organizatorius. Lyderių lentelėje bus rodomas tik žaidėjo vardas.
     </p>
-    <button class="btn btn-primary" id="btn-start" onclick="startQuiz()" disabled>
+    <div id="form-error" style="display:none;color:#e57373;font-size:13px;margin-bottom:10px;text-align:center;"></div>
+    <button class="btn btn-primary" id="btn-start" onclick="startQuiz()">
       Pradėti viktoriną →
     </button>
   </div>
@@ -721,24 +722,15 @@ let G = { nick:'', fullName:'', email:'', phone:'', qi:0, score:0, answered:fals
 document.getElementById('lbl-exh').textContent   = CFG.exhibitionName;
 document.getElementById('lbl-prize').textContent = CFG.prize;
 
-// Form validation — require nickname, name, email
+// Form inputs
 const inpNick  = document.getElementById('inp-nick');
 const inpName  = document.getElementById('inp-name');
 const inpEmail = document.getElementById('inp-email');
 const inpPhone = document.getElementById('inp-phone');
 
-function checkForm() {
-  const ok = inpNick.value.trim().length >= 2
-          && inpName.value.trim().length >= 2
-          && inpEmail.value.trim().includes('@');
-  document.getElementById('btn-start').disabled = !ok;
-}
+// Allow pressing Enter on any field to start
 [inpNick, inpName, inpEmail, inpPhone].forEach(el => {
-  el.addEventListener('input', checkForm);
-  el.addEventListener('change', checkForm);
-});
-inpPhone.addEventListener('keydown', e => {
-  if (e.key === 'Enter') { checkForm(); if (!document.getElementById('btn-start').disabled) startQuiz(); }
+  el.addEventListener('keydown', e => { if (e.key === 'Enter') startQuiz(); });
 });
 
 function show(id) {
@@ -753,7 +745,26 @@ function startQuiz() {
   const name  = inpName.value.trim();
   const email = inpEmail.value.trim();
   const phone = inpPhone.value.trim();
-  if (nick.length < 2 || name.length < 2 || !email.includes('@')) return;
+  const errEl = document.getElementById('form-error');
+  if (nick.length < 2) {
+    errEl.textContent = '⚠️ Įveskite žaidėjo vardą (bent 2 simboliai).';
+    errEl.style.display = 'block';
+    inpNick.focus();
+    return;
+  }
+  if (name.length < 2) {
+    errEl.textContent = '⚠️ Įveskite savo vardą ir pavardę.';
+    errEl.style.display = 'block';
+    inpName.focus();
+    return;
+  }
+  if (!email.includes('@')) {
+    errEl.textContent = '⚠️ Įveskite teisingą el. pašto adresą.';
+    errEl.style.display = 'block';
+    inpEmail.focus();
+    return;
+  }
+  errEl.style.display = 'none';
   G = { nick, fullName:name, email, phone, qi:0, score:0, answered:false, submitted:false };
   show('s-quiz');
   renderQ();
