@@ -227,7 +227,7 @@
   <div style="text-align:center; margin-bottom:28px;">
     <div class="exh-label" id="lbl-exh">Fotografijų paroda</div>
     <h1 class="exh-title">Laukinės gamtos<br>viktorina</h1>
-    <p class="exh-sub">10 klausimų · Laimėk prizą!</p>
+    <p class="exh-sub">28 klausimai · Laimėk prizą!</p>
   </div>
   <div class="card">
     <div class="info-box">
@@ -236,15 +236,15 @@
     </div>
     <div class="field">
       <label for="inp-nick">Žaidėjo vardas <span style="font-weight:400;color:var(--muted)">(matomas lyderių lentelėje)</span></label>
-      <input id="inp-nick" type="text" placeholder="pvz. GamtosŽinovas123" autocomplete="off" />
+      <input id="inp-nick" type="text" placeholder="pvz. Juodas kiškis" autocomplete="off" />
     </div>
     <div class="field">
       <label for="inp-name">Vardas ir pavardė</label>
-      <input id="inp-name" type="text" placeholder="Jūsų tikrasis vardas" autocomplete="name" />
+      <input id="inp-name" type="text" placeholder="Jūsų vardas ir pavardė" autocomplete="name" />
     </div>
     <div class="field">
       <label for="inp-email">El. paštas</label>
-      <input id="inp-email" type="email" placeholder="jusu@el.pastas.lt" autocomplete="email" />
+      <input id="inp-email" type="email" placeholder="jusu@gmail.com" autocomplete="email" />
     </div>
     <div class="field">
       <label for="inp-phone">Telefono numeris <span style="font-weight:400;color:var(--muted)">(neprivaloma)</span></label>
@@ -344,116 +344,369 @@ const CFG = {
    correct — teisingas indeksas (0=A 1=B 2=C 3=D)
 ──────────────────────────────────────────── */
 const QS = [
+  // 1. Naujosios Zelandijos kailinis ruonis — pavadinimas
   {
-    image   : "images/1_eglinis_tetervas.jpg",
-    question: "Koks šio paukščio pavadinimas?",
+    image   : "images/1-1 - nz fur seal Large.jpeg",
+    question: "Koks yra šio gyvūno pavadinimas?",
     options : [
-      "Tetervinas (Lyrurus tetrix)",
-      "Kurtinys (Tetrao urogallus)",
-      "Eglinis tetervas (Falcipennis canadensis)",
-      "Jerubė (Tetrastes bonasia)"
-    ],
-    correct : 2,
-    fact    : "💡 Eglinis tetervas gyvena Šiaurės Amerikos spygliuočių miškuose. Žiemą jis minta beveik vien tik eglių bei pušų spygliais — maistas, kurio dauguma gyvūnų apskritai negali virškinti!"
-  },
-  {
-    image   : "images/2_baltasis_kurtinukas.jpg",
-    question: "Koks unikalus šių paukščių sugebėjimas?",
-    options : [
-      "Jie gali ilgai plaukti po vandeniu",
-      "Jų plunksnos keičia spalvą pagal sezoną",
-      "Jie gali skraidyti atgalios",
-      "Jie nemiegojo žiemos miego"
+      "Pietų Afrikos kailinis ruonis / South African fur seal",
+      "Naujosios Zelandijos kailinis ruonis / New Zealand fur seal",
+      "Naujosios Zelandijos jūrų liūtas / New Zealand sea lion",
+      "Subantarktinis kailinis ruonis / Subantarctic fur seal"
     ],
     correct : 1,
-    fact    : "💡 Baltasis kurtinukas (Lagopus lagopus) žiemą tampa visiškai baltas — tobulas kamufliažas sniege. Vasarą ir rudenį plunksnos grįžta į rudą spalvą. Net kojos apaugusios plunksnomis, tarsi šilti batai!"
+    fact    : "💡 Naujosios Zelandijos kailinis ruonis yra labiausiai paplitęs ruonis Naujojoje Zelandijoje. Jis gyvena pakrantėse ir uolėtose salpose, dažnai renkasi poilsiui akmenuotuose paplūdimiuose."
   },
+  // 2. Naujosios Zelandijos kailinis ruonis — faktas
   {
-    image   : "images/3_kea.jpg",
-    question: "Kur pasaulyje gyvena ši papūga kija (kea)?",
+    image   : "images/1-2 nz fur seal Large.jpeg",
+    question: "Kiek giliai gali nerti Naujosios Zelandijos kailinis ruonis?",
     options : [
-      "Australijos tropiniuose miškuose",
-      "Naujosios Zelandijos Pietinių Alpių kalnuose",
-      "Pietų Amerikos Andų kalnuose",
-      "Himalajų kalnuose Azijoje"
-    ],
-    correct : 1,
-    fact    : "💡 Kija (Nestor notabilis) — vienintelė pasaulyje kalnų papūga! Gyvena Naujosios Zelandijos kalnuose, dažnai prie sniego ribos. Žinoma dėl išskirtinio intelekto: ji moka atidaryti kuprinių užtrauktukus!"
-  },
-  {
-    image   : "images/4_kojote.jpg",
-    question: "Kaip vadinasi šis šunšeimio plėšrūnas?",
-    options : [
-      "Vilkas (Canis lupus)",
-      "Lapė (Vulpes vulpes)",
-      "Kojotė (Canis latrans)",
-      "Šakalas (Canis aureus)"
+      "Iki 50 metrų",
+      "Iki 100 metrų",
+      "Iki 238 metrų",
+      "Iki 400 metrų"
     ],
     correct : 2,
-    fact    : "💡 Kojotė (Canis latrans) — vienas lanksčiausių Šiaurės Amerikos plėšrūnų. Gali bėgti iki 65 km/h greičiu ir puikiai prisitaiko gyventi net dideliuose miestuose. Maorių legendose ji laikoma apgavike!"
+    fact    : "💡 Naujosios Zelandijos kailinis ruonis gali nerti iki 238 metrų gylio ir išbūti po vandeniu net 11 minučių!"
   },
+  // 3. Naujosios Zelandijos karvelis — pavadinimas
   {
-    image   : "images/5_erelis_sede.jpg",
-    question: "Koks šio erelio pavadinimas?",
+    image   : "images/2-1 nz wood pigeon Large.jpeg",
+    question: "Koks yra šio gyvūno pavadinimas?",
     options : [
-      "Auksuotasis erelis (Aquila chrysaetos)",
-      "Plikagalvis erelis (Haliaeetus leucocephalus)",
-      "Jūros erelis (Haliaeetus albicilla)",
-      "Žvejybinis erelis (Pandion haliaetus)"
+      "Naujosios Zelandijos karvelis / New Zealand wood pigeon",
+      "Australinis vainikuotasis karvelis / Australian crowned pigeon",
+      "Ramiojo vandenyno imperinis balandis / Pacific imperial pigeon",
+      "Naujosios Gvinėjos karvelis / New Guinea pigeon"
     ],
-    correct : 1,
-    fact    : "💡 Plikagalvis erelis (Haliaeetus leucocephalus) — JAV nacionalinis simbolis. Įdomu tai, kad baltosios plunksnos ant galvos atsiranda tik sulaukus 4–5 metų. Jaunikliams galva yra ruda — kaip ir viso kūno plunksnos!"
+    correct : 0,
+    fact    : "💡 Naujosios Zelandijos karvelis (Kererū) yra lengvai atpažįstamas dėl ryškių žaliai metalinių plunksnų ir balto krūtinės lopinėlio. Tai nacionalinės svarbos paukštis Naujojoje Zelandijoje."
   },
+  // 4. Naujosios Zelandijos karvelis — faktas
   {
-    image   : "images/6_erelis_skrenda.jpg",
-    question: "Kaip plikagalvis erelis medžioja žuvis?",
+    image   : "images/2-2 nz wood pigeon Large.jpeg",
+    question: "Kokį unikalų vaidmenį Naujosios Zelandijos karvelis atlieka gamtoje?",
     options : [
-      "Neria po vandeniu kaip pingvinas",
-      "Vaikšto sekliuose vandenyse ir gaudo snapu",
-      "Skrendant kojomis griebia žuvis iš vandens paviršiaus",
-      "Laukia krante ir gaudo žuvis liežuviu"
+      "Jis apdulkina vietinius augalus",
+      "Jis reguliuoja vabzdžių populiaciją",
+      "Tai vienintelis paukštis, galintis praryti ir paskleisti didelių vietinių medžių sėklas",
+      "Jis maitinasi invazinėmis rūšimis"
     ],
     correct : 2,
-    fact    : "💡 Plikagalvis erelis — virtuoziškas žvejys! Skrendamas virš vandens, staiga neria žemyn ir kojomis griebia žuvis iš paviršiaus. Jo sparnų plotis gali siekti iki 2,3 metro — didesnis nei daugumos žmonių ūgis!"
+    fact    : "💡 Naujosios Zelandijos karvelis yra paskutinis pakankamai didelis paukštis šalyje, galintis praryti stambių vietinių medžių vaisius ir paskleisti jų sėklas. Be jo daugelis senovinių medžių negalėtų daugintis."
   },
+  // 5. Geltonakis pingvinas — pavadinimas
   {
-    image   : "images/7_geltonakis_pingvinas.jpg",
-    question: "Koks šio pingvino pavadinimas?",
+    image   : "images/3-1 yellow eyed penguin Large.jpeg",
+    question: "Koks yra šio gyvūno pavadinimas?",
     options : [
-      "Karališkasis pingvinas (Aptenodytes patagonicus)",
-      "Makaroninis pingvinas (Eudyptes chrysolophus)",
-      "Afrikietiškas pingvinas (Spheniscus demersus)",
-      "Geltonakis pingvinas (Megadyptes antipodes)"
+      "Storasnapis kuoduotasis pingvinas / Fiordland crested penguin",
+      "Geltonakis pingvinas / Yellow-eyed penguin",
+      "Imperatoriškasis pingvinas / Emperor penguin",
+      "Karališkasis pingvinas / King penguin"
+    ],
+    correct : 1,
+    fact    : "💡 Geltonakis pingvinas (maorių k. Hoiho) yra endemiška Naujosios Zelandijos rūšis. Atpažįstamas pagal ryškiai geltonas akis ir geltoną juostą ant galvos."
+  },
+  // 6. Geltonakis pingvinas — faktas
+  {
+    image   : "images/3-2-yellow eyed penguin Large.jpeg",
+    question: "Kokia yra geltonakio pingvino pozicija pasaulyje?",
+    options : [
+      "Jis yra didžiausias pingvinas pasaulyje",
+      "Jis yra greičiausias pingvinas pasaulyje",
+      "Jis yra vienintelis miške periantis pingvinas",
+      "Jis yra antras rečiausias pingvinas pasaulyje"
     ],
     correct : 3,
-    fact    : "💡 Geltonakis pingvinas — Hoiho maorių kalba — yra viena rečiausių pasaulyje pingvinų rūšių! Skirtingai nuo daugumos pingvinų, jis nekuria kolonijų: lizdus stato tankiuose krūmuose ar miško paunksmėje."
+    fact    : "💡 Geltonakis pingvinas yra antras rečiausias pingvinas pasaulyje — laukinėje gamtoje gyvena tik apie 4 000 individų. Jis yra endemiška Naujosios Zelandijos rūšis."
   },
+  // 7. Rudasis nestoras — pavadinimas
   {
-    image   : "images/8_geltonakis_pingvinas_2.jpg",
-    question: "Kuo geltonakis pingvinas skiriasi nuo daugumos kitų pingvinų?",
+    image   : "images/4-1 kaka Large.jpeg",
+    question: "Koks yra šio gyvūno pavadinimas?",
     options : [
-      "Jis yra vienintelis pingvinas, galintis skristi",
-      "Jis nekuria kolonijų — lizdus stato atskirai nuo kitų",
-      "Jis minta tik medūzomis",
-      "Jis niekada neišeina į sausumą"
+      "Kakapo / Kakapo (owl parrot)",
+      "Kakadu / Cockatoo",
+      "Papūga kėja / Kea alpine parrot",
+      "Rudasis nestoras / Kaka"
+    ],
+    correct : 3,
+    fact    : "💡 Rudasis nestoras (Kaka) gyvena Naujosios Zelandijos miškuose. Tai vienas iš dviejų didelių Naujosios Zelandijos paukščių, priklausančių Nestor genčiai — kita rūšis yra papūga kėja."
+  },
+  // 8. Rudasis nestoras — faktas
+  {
+    image   : "images/4-2 kaka Large.jpeg",
+    question: "Kaip rudasis nestoras ieško maisto miško medžiuose?",
+    options : [
+      "Naudoja lankstų, šepetėliu besibaigiantį liežuvį nektarui ir sakai ištraukti",
+      "Knisa žemę snapu, ieškodamas kirminų",
+      "Gaudo vabzdžius ore",
+      "Maitinasi tik vaisiais ir uogomis"
+    ],
+    correct : 0,
+    fact    : "💡 Rudasis nestoras turi lankstų, šepetėliu besibaigiantį liežuvį, kuriuo ištraukia nektarą iš gėlių ir sakas iš žievės. Jis taip pat snapu skaldo medieną, ieškodamas lervų."
+  },
+  // 9. Papūga kėja — pavadinimas
+  {
+    image   : "images/5-1 kea alpine parrot Large.jpeg",
+    question: "Koks yra šio gyvūno pavadinimas?",
+    options : [
+      "Rudasis nestoras / Kaka",
+      "Kakapo / Kakapo (owl parrot)",
+      "Papūga kėja / Kea alpine parrot",
+      "Kākāriki / Kākāriki (red-crowned parakeet)"
+    ],
+    correct : 2,
+    fact    : "💡 Papūga kėja (Kea) yra endemiška Naujosios Zelandijos Pietų salai. Ji lengvai atpažįstama pagal ryškiai oranžines plunksnas po sparnais."
+  },
+  // 10. Papūga kėja — faktas 1
+  {
+    image   : "images/5-2 kea alpine parrot Large.jpeg",
+    question: "Kuo papūga kėja yra išskirtinė tarp visų papūgų pasaulyje?",
+    options : [
+      "Tai vienintelė naktinė papūga pasaulyje",
+      "Tai vienintelė neskraidanti papūga",
+      "Tai vienintelė kalnuose gyvenanti papūga pasaulyje",
+      "Tai vienintelė vandenyje gyvenanti papūga"
+    ],
+    correct : 2,
+    fact    : "💡 Papūga kėja yra vienintelė kalnuose gyvenanti papūga visame pasaulyje. Ji gyvena Naujosios Zelandijos Pietų salos Alpėse, dažnai 1 500–2 000 metrų aukštyje."
+  },
+  // 11. Papūga kėja — faktas 2
+  {
+    image   : "images/5-3 kea alpine parrot Large.jpeg",
+    question: "Kuo papūga kėja garsėja savo intelektu?",
+    options : [
+      "Ji kalba žmogaus balsu",
+      "Ji geba spręsti sudėtingas dėliones ir naudoti įrankius",
+      "Ji geba skaičiuoti iki dešimties",
+      "Ji atpažįsta save veidrodyje"
     ],
     correct : 1,
-    fact    : "💡 Geltonakis pingvinas (Megadyptes antipodes) nemėgsta kompanijos! Porų lizdai dažnai stovi 50–100 metrų atstumu vienas nuo kito, paslėpti krūmuose ar miške. Kolektyvinė gynyba jiems nerūpi — svarbu privatumas!"
+    fact    : "💡 Papūga kėja laikoma viena protingiausių paukščių pasaulyje. Ji geba spręsti kelių žingsnių dėliones ir mokytis stebint kitus. Kėja taip pat žinoma savo smalsumu — ji dažnai tyrinėja turistų kuprines ir automobilių gumines dalis!"
   },
-  // ⬇️ PAPILDYKITE klausimus 9–10, kai turėsite daugiau nuotraukų:
+  // 12. Baltagalvis jūrinis erelis — pavadinimas
   {
-    image   : "images/9.jpg",
-    question: "KLAUSIMAS 9 — pakeiskite šį tekstą",
-    options : ["Atsakymas A", "Atsakymas B", "Atsakymas C", "Atsakymas D"],
+    image   : "images/6-1 bald eagle Large.jpeg",
+    question: "Koks yra šio gyvūno pavadinimas?",
+    options : [
+      "Baltagalvis jūrinis erelis / Bald eagle",
+      "Auksinis erelis / Golden eagle",
+      "Baltauodegis erelis / White-tailed eagle",
+      "Filipinų erelis / Philippine eagle"
+    ],
     correct : 0,
-    fact    : "💡 Įrašykite įdomų faktą apie šį gyvūną…"
+    fact    : "💡 Baltagalvis jūrinis erelis yra JAV nacionalinis simbolis nuo 1782 metų. Būdingas baltas galvos plunksnų dangalas atsiranda tik sulaukus 4–5 metų amžiaus."
   },
+  // 13. Baltagalvis jūrinis erelis — faktas
   {
-    image   : "images/10.jpg",
-    question: "KLAUSIMAS 10 — pakeiskite šį tekstą",
-    options : ["Atsakymas A", "Atsakymas B", "Atsakymas C", "Atsakymas D"],
+    image   : "images/6-2 bald eagle Large.jpeg",
+    question: "Kuo garsėja baltagalvio jūrinio erelio regėjimas?",
+    options : [
+      "Jis gali matyti tamsoje kaip pelėda",
+      "Jis mato tik juodai baltai",
+      "Jis gali matyti ultravioletinę šviesą",
+      "Jis mato 4–8 kartus aštriau nei žmogus"
+    ],
+    correct : 3,
+    fact    : "💡 Baltagalvis jūrinis erelis mato 4–8 kartus aštriau nei žmogus ir gali pastebėti žuvį vandenyje iš 1,5 km aukščio."
+  },
+  // 14. Rudoji lapė — pavadinimas
+  {
+    image   : "images/6-11 red fox Large.jpeg",
+    question: "Koks yra šio gyvūno pavadinimas?",
+    options : [
+      "Arktinė lapė / Arctic fox",
+      "Pilkoji lapė / Gray fox",
+      "Rudoji lapė / Red fox",
+      "Feneko lapė / Fennec fox"
+    ],
+    correct : 2,
+    fact    : "💡 Rudoji lapė yra plačiausiai paplitęs laukinis plėšrūnas pasaulyje — ji gyvena visuose žemynuose, išskyrus Antarktidą."
+  },
+  // 15. Rudoji lapė — faktas (melanistinė)
+  {
+    image   : "images/6-22 red fox Large.jpeg",
+    question: "Kokia yra ši lapė?",
+    options : [
+      "Albinosinė / Albino",
+      "Melanistinė / Cross fox (melanistic variant)",
+      "Paprastoji rudoji lapė / Common red fox",
+      "Arktinė lapė / Arctic fox"
+    ],
+    correct : 1,
+    fact    : "💡 Tai melanistinė rudoji lapė (angliškai: cross fox arba firefox). Tai genetinis spalvos variantas: lapė turi daugiau tamsaus pigmento nei įprasta, todėl atrodo žymiai tamsesnė nei tipinė rudoji lapė. Ši variacija pasitaiko laukinėje gamtoje natūraliai."
+  },
+  // 16. Rudasis lokys — pavadinimas
+  {
+    image   : "images/7-1brown bear Large.jpeg",
+    question: "Koks yra šio gyvūno pavadinimas?",
+    options : [
+      "Poliarinis lokys / Polar bear",
+      "Rudasis lokys / Brown bear",
+      "Juodasis lokys / Black bear",
+      "Spectaklinis lokys / Spectacled bear"
+    ],
+    correct : 1,
+    fact    : "💡 Rudasis lokys yra vienas didžiausių sausumos plėšrūnų pasaulyje. Jis gyvena Europoje, Azijoje ir Šiaurės Amerikoje. Didžiausi egzemplioriai — Aliaskos Kodiako salos lokiai."
+  },
+  // 17. Rudasis lokys — faktas
+  {
+    image   : "images/7-2 brown bear Large.jpeg",
+    question: "Kas nutinka rudojo lokio širdžiai žiemos miego metu?",
+    options : [
+      "Širdis visiškai sustoja kelioms valandoms",
+      "Širdies ritmas sulėtėja nuo 40 iki vos 8 dūžių per minutę",
+      "Širdis plaka dvigubai greičiau nei normaliai",
+      "Širdies ritmas nesikeičia"
+    ],
+    correct : 1,
+    fact    : "💡 Žiemos miego metu rudojo lokio širdies ritmas sulėtėja nuo 40 iki maždaug 8 dūžių per minutę. Per šį laikotarpį patelės dažnai atsivedą jauniklius — būdamos iš dalies „miegančios"!"
+  },
+  // 18. Kojotas — pavadinimas
+  {
+    image   : "images/8-1 coyote Large.jpeg",
+    question: "Koks yra šio gyvūno pavadinimas?",
+    options : [
+      "Sidabrinė lapė / Silver fox",
+      "Paprastasis vilkas / Gray wolf",
+      "Kojotas / Coyote",
+      "Raudonasis vilkas / Red wolf"
+    ],
+    correct : 2,
+    fact    : "💡 Kojotas (Canis latrans) yra artimas vilko giminaitis. Jo balsas — garsus staugimas ir lojimas — yra vienas labiausiai atpažįstamų garsų Šiaurės Amerikos dykumose."
+  },
+  // 19. Kojotas — faktas
+  {
+    image   : "images/8-2 coyote Large.jpeg",
+    question: "Kaip kojotas prisitaikė prie kintančios aplinkos?",
+    options : [
+      "Išmoko plaukti ir apsigyveno šalia vandenynų",
+      "Tapo vegetaru ir nebemėgina medžioti",
+      "Paplito po visą Šiaurės Ameriką, kai buvo išnaikinti vilkai",
+      "Prisitaikė gyventi tik šaltuose regionuose"
+    ],
+    correct : 2,
+    fact    : "💡 Kojotas yra vienas labiausiai prisitaikančių žinduolių. Kai buvo išnaikinti vilkai, kojotai išplito po visą Šiaurės ir Centrinę Ameriką — dabar jie gyvena net tokiuose miestuose kaip Los Andželas ir Niujorkas."
+  },
+  // 20. Paprastoji žvyrė — pavadinimas
+  {
+    image   : "images/9-1 ptarmigan Large.jpeg",
+    question: "Koks yra šio gyvūno pavadinimas?",
+    options : [
+      "Baltoji kurapka / White partridge",
+      "Paprastoji žvyrė / Ptarmigan",
+      "Tetervinas / Grouse",
+      "Snieginis garnys / Snowy egret"
+    ],
+    correct : 1,
+    fact    : "💡 Paprastoji žvyrė gyvena Arktikos ir subarktikos regionuose. Tai viena nedaugelio paukščių rūšių, kurios žiemą nemigruoja, o pasilieka šaltuose kraštuose ištisus metus."
+  },
+  // 21. Paprastoji žvyrė — faktas
+  {
+    image   : "images/9-2 ptarmigan Large.jpeg",
+    question: "Kaip paprastoji žvyrė maskuojasi skirtingais metų laikais?",
+    options : [
+      "Jos plunksnos nesikeičia visus metus",
+      "Ji keičia spalvą tik kartą per gyvenimą",
+      "Jos plunksnos tampa pilkomis rudenį ir žaliomis pavasarį",
+      "Jos plunksnos tampa baltomis žiemą ir rudai raibomis vasarą"
+    ],
+    correct : 3,
+    fact    : "💡 Paprastoji žvyrė keičia plunksnas pagal sezoną — žiemą ji būna visiškai balta kaip sniegas, vasarą — rudai raiba. Jos kojos taip pat apaugusios plunksnomis, veikiančiomis kaip natūralūs snieginiai batai!"
+  },
+  // 22. Ursonas — pavadinimas
+  {
+    image   : "images/10-1 canadian porcupine Large.jpeg",
+    question: "Koks yra šio gyvūno pavadinimas?",
+    options : [
+      "Kuoduotasis dygliaūsis / African crested porcupine",
+      "Ursonas / Canadian porcupine",
+      "Europinis ežys / European hedgehog",
+      "Brazilinis dygliaūsis / Brazilian porcupine"
+    ],
+    correct : 1,
+    fact    : "💡 Ursonas yra didžiausias Šiaurės Amerikos graužikas po bebro. Jis puikiai lipa medžiais ir dažnai praleidžia laiką medžių viršūnėse, maitindamasis žieve ir lapais."
+  },
+  // 23. Ursonas — faktas
+  {
+    image   : "images/10-111 canadian porcupine Large.jpeg",
+    question: "Ar ursonas gali šaudyti spygliais?",
+    options : [
+      "Taip — gali šaudyti iki 3 metrų atstumu",
+      "Taip — bet tik naktį",
+      "Taip — bet tik gynybinės pozos metu",
+      "Ne — spygliai atsiskiria tik kontakto metu"
+    ],
+    correct : 3,
+    fact    : "💡 Tai populiarus mitas — ursonas negali „šaudyti" spygliais! Spygliai atsiskiria tik tada, kai priešas paliečia ursono kūną. Tačiau spygliai turi atgal nukreiptus kablius, todėl įsmigę labai sunkiai ištraukiami. Ursonas turi apie 30 000 spyglių!"
+  },
+  // 24. Siuvėjas — pavadinimas
+  {
+    image   : "images/11-1 stitch from nz Large.jpeg",
+    question: "Koks yra šio gyvūno pavadinimas?",
+    options : [
+      "Naujosios Zelandijos tujus / Tui",
+      "Siuvėjas / Hihi (Stitchbird)",
+      "Naujosios Zelandijos karvelis / New Zealand wood pigeon",
+      "Varpinis paukštis / Bellbird"
+    ],
+    correct : 1,
+    fact    : "💡 Siuvėjas (Hihi) yra vienas rečiausių Naujosios Zelandijos paukščių — jis išnyko iš žemyninės dalies ir dabar gyvena tik keliose izoliuotose salose. Jis saugomas kaip nykstanti rūšis."
+  },
+  // 25. Storasnapis kuoduotasis pingvinas — pavadinimas
+  {
+    image   : "images/12-1 fiordland crested penguin Large.jpeg",
+    question: "Koks yra šio gyvūno pavadinimas?",
+    options : [
+      "Geltonakis pingvinas / Yellow-eyed penguin",
+      "Mažasis mėlynasis pingvinas / Little blue penguin",
+      "Storasnapis kuoduotasis pingvinas / Fiordland crested penguin",
+      "Karališkasis pingvinas / King penguin"
+    ],
+    correct : 2,
+    fact    : "💡 Storasnapis kuoduotasis pingvinas yra endemiška Naujosios Zelandijos rūšis, gyvenanti Fiordlando regione. Tai viena rečiausių pingvinų rūšių pasaulyje, kuriai gresia išnykimas."
+  },
+  // 26. Raiboji pelėda — pavadinimas
+  {
+    image   : "images/13-1 northern hawkowl Large.jpeg",
+    question: "Koks yra šio gyvūno pavadinimas?",
+    options : [
+      "Raiboji pelėda / Northern hawk owl",
+      "Ūsuotoji pelėda / Tawny owl",
+      "Pelytinė pelėdikė / Little owl",
+      "Nykštukinė pelėdikė / Eurasian pygmy owl"
+    ],
     correct : 0,
-    fact    : "💡 Įrašykite įdomų faktą apie šį gyvūną…"
+    fact    : "💡 Raiboji pelėda yra neįprasta pelėda — skirtingai nuo daugumos savo giminaičių, ji yra dieninė (aktyviausia dieną). Ji gali pastebėti grobį iš daugiau nei 800 metrų atstumo!"
+  },
+  // 27. Naujosios Zelandijos jūrų liūtas — pavadinimas
+  {
+    image   : "images/14-1 nz sea lion Large.jpeg",
+    question: "Koks yra šio gyvūno pavadinimas?",
+    options : [
+      "Naujosios Zelandijos kailinis ruonis / New Zealand fur seal",
+      "Pietų Amerikos jūrų liūtas / South American sea lion",
+      "Australinis jūrų liūtas / Australian sea lion",
+      "Naujosios Zelandijos jūrų liūtas / New Zealand sea lion"
+    ],
+    correct : 3,
+    fact    : "💡 Naujosios Zelandijos jūrų liūtas yra viena rečiausių jūrų liūtų rūšių pasaulyje. Jis gali nerti iki 600 metrų gylio — tai yra rekordas tarp jūrų liūtų!"
+  },
+  // 28. Naujosios Zelandijos tujus — pavadinimas
+  {
+    image   : "images/15-1  Large.jpeg",
+    question: "Koks yra šio gyvūno pavadinimas?",
+    options : [
+      "Siuvėjas / Hihi (Stitchbird)",
+      "Naujosios Zelandijos tujus / Tui",
+      "Varpinis paukštis / Bellbird",
+      "Naujosios Zelandijos karvelis / New Zealand wood pigeon"
+    ],
+    correct : 1,
+    fact    : "💡 Naujosios Zelandijos tujus (Tui) turi dvi balso dėžutes, todėl gali vienu metu gaminti sudėtingus garso derinius. Tai svarbus vietinių augalų apdulkintojas — ant gerklės puikuojasi balti plunksnų kuokšteliai, kaip elegantiškas kaklaraištis."
   }
 ];
 
