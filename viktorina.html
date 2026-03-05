@@ -733,7 +733,10 @@ function checkForm() {
           && inpEmail.value.trim().includes('@');
   document.getElementById('btn-start').disabled = !ok;
 }
-[inpNick, inpName, inpEmail, inpPhone].forEach(el => el.addEventListener('input', checkForm));
+[inpNick, inpName, inpEmail, inpPhone].forEach(el => {
+  el.addEventListener('input', checkForm);
+  el.addEventListener('change', checkForm);
+});
 inpPhone.addEventListener('keydown', e => {
   if (e.key === 'Enter') { checkForm(); if (!document.getElementById('btn-start').disabled) startQuiz(); }
 });
