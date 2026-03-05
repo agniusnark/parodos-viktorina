@@ -1,5 +1,5 @@
 // ============================================================
-// Google Apps Script — Viktorinos lyderių lentelė
+// Google Apps Script — Viktorinos lyderių lentelė (v2)
 // ============================================================
 // SĄRANKA:
 //   1. Atidarykite naują Google Sheets dokumentą
@@ -21,9 +21,12 @@ function doPost(e) {
     const s = getSheet();
     s.appendRow([
       new Date(),
-      String(d.name  || 'Nežinomas'),
-      Number(d.score || 0),
-      Number(d.total || 10),
+      String(d.nickname || 'Žaidėjas'),
+      String(d.fullName || ''),
+      String(d.email    || ''),
+      String(d.phone    || ''),
+      Number(d.score    || 0),
+      Number(d.total    || 10),
       String(d.timestamp || '')
     ]);
     return json({ ok: true });
@@ -38,13 +41,15 @@ function doGet(e) {
     const rows = s.getDataRange().getValues();
 
     // Praleidžiame antraštės eilutę (row 0)
+    // SVARBU: lyderių lentelėje grąžiname TIK slapyvardį (nickname)
+    // Vardas, pavardė, el. paštas ir telefonas — konfidencialūs
     const scores = rows.slice(1)
       .filter(r => r[1]) // filtruojame tuščias
       .map(r => ({
-        date : r[0],
-        name : String(r[1]),
-        score: Number(r[2]),
-        total: Number(r[3]) || 10
+        date    : r[0],
+        nickname: String(r[1]),
+        score   : Number(r[5]),
+        total   : Number(r[6]) || 10
       }))
       .sort((a, b) => b.score - a.score || new Date(a.date) - new Date(b.date))
       .slice(0, 200); // top 200
@@ -61,8 +66,8 @@ function getSheet() {
   if (!s) {
     s = ss.insertSheet(SHEET);
     // Antraštė
-    s.appendRow(['Data', 'Vardas', 'Taškai', 'Iš viso', 'Laikas']);
-    const h = s.getRange(1, 1, 1, 5);
+    s.appendRow(['Data', 'Žaidėjo vardas', 'Vardas Pavardė', 'El. paštas', 'Telefonas', 'Taškai', 'Iš viso', 'Laikas']);
+    const h = s.getRange(1, 1, 1, 8);
     h.setBackground('#c9954a');
     h.setFontColor('#ffffff');
     h.setFontWeight('bold');

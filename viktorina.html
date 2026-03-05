@@ -231,13 +231,28 @@
   </div>
   <div class="card">
     <div class="info-box">
-      🏆 Geriausiai atspėjęs laimės <b id="lbl-prize">50€ vertės foto spaudinį</b>!<br>
+      🏆 Geriausiai atspėjęs laimės <b id="lbl-prize">50€ vertės FotoFoto kuponą</b>!<br>
       Rezultatai renkami per visą parodą. Nugalėtojas skelbiamas parodos pabaigoje.
     </div>
     <div class="field">
-      <label for="inp-name">Jūsų vardas ir pavardė</label>
-      <input id="inp-name" type="text" placeholder="Įveskite savo vardą..." autocomplete="name" />
+      <label for="inp-nick">Žaidėjo vardas <span style="font-weight:400;color:var(--muted)">(matomas lyderių lentelėje)</span></label>
+      <input id="inp-nick" type="text" placeholder="pvz. GamtosŽinovas123" autocomplete="off" />
     </div>
+    <div class="field">
+      <label for="inp-name">Vardas ir pavardė</label>
+      <input id="inp-name" type="text" placeholder="Jūsų tikrasis vardas" autocomplete="name" />
+    </div>
+    <div class="field">
+      <label for="inp-email">El. paštas</label>
+      <input id="inp-email" type="email" placeholder="jusu@el.pastas.lt" autocomplete="email" />
+    </div>
+    <div class="field">
+      <label for="inp-phone">Telefono numeris <span style="font-weight:400;color:var(--muted)">(neprivaloma)</span></label>
+      <input id="inp-phone" type="tel" placeholder="+370..." autocomplete="tel" />
+    </div>
+    <p style="font-size:11.5px;color:var(--muted);line-height:1.5;margin-bottom:16px;">
+      🔒 Jūsų vardas, pavardė, el. paštas ir telefonas yra konfidencialūs — juos matys tik parodos organizatorius. Lyderių lentelėje bus rodomas tik žaidėjo vardas.
+    </p>
     <button class="btn btn-primary" id="btn-start" onclick="startQuiz()" disabled>
       Pradėti viktoriną →
     </button>
@@ -316,7 +331,7 @@
 ──────────────────────────────────────────── */
 const CFG = {
   exhibitionName : "Fotografijų paroda 2026",
-  prize          : "50€ vertės foto spaudinį",
+  prize          : "50€ vertės FotoFoto kuponą",
 
   // Po Google Apps Script sąrankos įklijuokite URL:
   // (palikite "" jei dar nenustatyta — naudos vietinę atmintį)
@@ -447,19 +462,27 @@ const QS = [
 ──────────────────────────────────────────── */
 const LABS = ['A','B','C','D'];
 
-let G = { name:'', qi:0, score:0, answered:false, submitted:false };
+let G = { nick:'', fullName:'', email:'', phone:'', qi:0, score:0, answered:false, submitted:false };
 
 // Init UI labels
 document.getElementById('lbl-exh').textContent   = CFG.exhibitionName;
 document.getElementById('lbl-prize').textContent = CFG.prize;
 
-// Name field
-const inp = document.getElementById('inp-name');
-inp.addEventListener('input', () => {
-  document.getElementById('btn-start').disabled = inp.value.trim().length < 2;
-});
-inp.addEventListener('keydown', e => {
-  if (e.key === 'Enter' && inp.value.trim().length >= 2) startQuiz();
+// Form validation — require nickname, name, email
+const inpNick  = document.getElementById('inp-nick');
+const inpName  = document.getElementById('inp-name');
+const inpEmail = document.getElementById('inp-email');
+const inpPhone = document.getElementById('inp-phone');
+
+function checkForm() {
+  const ok = inpNick.value.trim().length >= 2
+          && inpName.value.trim().length >= 2
+          && inpEmail.value.trim().includes('@');
+  document.getElementById('btn-start').disabled = !ok;
+}
+[inpNick, inpName, inpEmail, inpPhone].forEach(el => el.addEventListener('input', checkForm));
+inpPhone.addEventListener('keydown', e => {
+  if (e.key === 'Enter') { checkForm(); if (!document.getElementById('btn-start').disabled) startQuiz(); }
 });
 
 function show(id) {
@@ -470,9 +493,12 @@ function show(id) {
 
 /* ---- start ---- */
 function startQuiz() {
-  const name = inp.value.trim();
-  if (name.length < 2) return;
-  G = { name, qi:0, score:0, answered:false, submitted:false };
+  const nick  = inpNick.value.trim();
+  const name  = inpName.value.trim();
+  const email = inpEmail.value.trim();
+  const phone = inpPhone.value.trim();
+  if (nick.length < 2 || name.length < 2 || !email.includes('@')) return;
+  G = { nick, fullName:name, email, phone, qi:0, score:0, answered:false, submitted:false };
   show('s-quiz');
   renderQ();
 }
@@ -581,7 +607,10 @@ async function submitScore() {
   btn.disabled = true; btn.textContent = 'Pateikiama…';
 
   const payload = {
-    name     : G.name,
+    nickname : G.nick,
+    fullName : G.fullName,
+    email    : G.email,
+    phone    : G.phone,
     score    : G.score,
     total    : QS.length,
     timestamp: new Date().toISOString()
@@ -590,7 +619,7 @@ async function submitScore() {
   if (!CFG.scriptUrl) {
     // Demo režimas: saugoti naršyklės atmintyje
     const arr = JSON.parse(localStorage.getItem('vq_scores')||'[]');
-    arr.push(payload);
+    arr.push({ nickname: payload.nickname, score: payload.score, total: payload.total });
     localStorage.setItem('vq_scores', JSON.stringify(arr));
     G.submitted = true;
     document.getElementById('r-submit-sec').style.display = 'none';
@@ -665,8 +694,8 @@ function renderLB(scores) {
           <li class="lb-row">
             <span class="lb-rank ${i<3?'r'+(i+1):''}">${i<3?em[i]:i+1}</span>
             <div class="lb-info">
-              <div class="lb-name ${s.name===G.name?'me':''}">
-                ${esc(s.name)}${s.name===G.name?' &nbsp;← Jūs':''}
+              <div class="lb-name ${s.nickname===G.nick?'me':''}">
+                ${esc(s.nickname||s.name)}${s.nickname===G.nick?' &nbsp;← Jūs':''}
               </div>
               <div class="lb-bar">
                 <div class="lb-bar-fill" style="width:${Math.round(s.score/top*100)}%"></div>
@@ -682,7 +711,7 @@ function renderLB(scores) {
 }
 
 function goWelcome() {
-  G = { name:G.name, qi:0, score:0, answered:false, submitted:false };
+  G = { nick:G.nick, fullName:G.fullName, email:G.email, phone:G.phone, qi:0, score:0, answered:false, submitted:false };
   show('s-welcome');
 }
 
