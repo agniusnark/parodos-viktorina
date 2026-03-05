@@ -978,7 +978,12 @@ function renderLB(scores) {
 }
 
 function goWelcome() {
-  G = { nick:G.nick, fullName:G.fullName, email:G.email, phone:G.phone, qi:0, score:0, answered:false, submitted:false };
+  G = { nick:'', fullName:'', email:'', phone:'', qi:0, score:0, answered:false, submitted:false };
+  inpNick.value = '';
+  inpName.value = '';
+  inpEmail.value = '';
+  inpPhone.value = '';
+  document.getElementById('form-error').style.display = 'none';
   show('s-welcome');
 }
 
