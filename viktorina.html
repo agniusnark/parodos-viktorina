@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fotografijų parodos viktorina</title>
+  <style>
+    :root {
+      --bg:       #0c0c0e;
+      --bg2:      #171719;
+      --bg3:      #222226;
+      --gold:     #c9954a;
+      --gold-lt:  #e8b46e;
+      --gold-dim: rgba(201,149,74,.13);
+      --text:     #f0ede8;
+      --muted:    #9a9490;
+      --green:    #34d399;
+      --red:      #f87171;
+      --r:        13px;
+      --rs:       8px;
+      --t:        .28s ease;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100dvh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 24px 16px 48px;
+    }
+    .wrap { width: 100%; max-width: 680px; }
+
+    /* ---- screens ---- */
+    .screen { display: none; }
+    .screen.on { display: block; animation: rise .38s ease both; }
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(14px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ---- shared ---- */
+    .exh-label {
+      font-size: 11px; font-weight: 700;
+      letter-spacing: 3px; text-transform: uppercase;
+      color: var(--gold); margin-bottom: 6px;
+    }
+    .exh-title {
+      font-size: clamp(26px, 5vw, 36px);
+      font-weight: 300; letter-spacing: -.5px; line-height: 1.2;
+      margin-bottom: 8px;
+    }
+    .exh-sub { color: var(--muted); font-size: 15px; margin-bottom: 28px; }
+
+    .card {
+      background: var(--bg2);
+      border: 1px solid rgba(255,255,255,.06);
+      border-radius: var(--r);
+      padding: 26px;
+    }
+
+    .info-box {
+      background: var(--gold-dim);
+      border: 1px solid rgba(201,149,74,.22);
+      border-radius: var(--rs);
+      padding: 14px 16px;
+      font-size: 13.5px; line-height: 1.65;
+      color: var(--muted);
+      margin-bottom: 22px;
+    }
+    .info-box b { color: var(--gold-lt); }
+
+    /* ---- inputs ---- */
+    .field { margin-bottom: 18px; }
+    .field label { display: block; font-size: 13px; color: var(--muted); font-weight: 600; margin-bottom: 7px; }
+    .field input {
+      width: 100%; background: var(--bg3);
+      border: 1.5px solid rgba(255,255,255,.1);
+      border-radius: var(--rs);
+      padding: 13px 15px; color: var(--text); font-size: 16px;
+      outline: none; transition: border-color var(--t);
+    }
+    .field input:focus { border-color: var(--gold); }
+
+    /* ---- buttons ---- */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      border: none; border-radius: var(--rs);
+      cursor: pointer; font-size: 15px; font-weight: 600;
+      padding: 14px 24px; transition: all var(--t); text-decoration: none;
+    }
+    .btn-primary {
+      background: var(--gold); color: #0d0d0d;
+      width: 100%; font-size: 16px; padding: 16px;
+    }
+    .btn-primary:hover:not(:disabled) { background: var(--gold-lt); transform: translateY(-1px); }
+    .btn-primary:disabled { opacity: .38; cursor: not-allowed; }
+    .btn-ghost {
+      background: transparent; color: var(--muted);
+      border: 1.5px solid rgba(255,255,255,.13); width: 100%; margin-top: 10px;
+    }
+    .btn-ghost:hover { color: var(--text); border-color: rgba(255,255,255,.28); }
+
+    /* ---- quiz ---- */
+    .qmeta {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 12px;
+    }
+    .qmeta-left { font-size: 13px; color: var(--muted); font-weight: 600; }
+    .qmeta-right { font-size: 13px; color: var(--gold); font-weight: 700; }
+
+    .prog-bar {
+      height: 3px; background: var(--bg3); border-radius: 99px;
+      margin-bottom: 22px; overflow: hidden;
+    }
+    .prog-fill { height: 100%; background: var(--gold); border-radius: 99px; transition: width .4s ease; }
+
+    .photo-wrap {
+      width: 100%; aspect-ratio: 4/3;
+      border-radius: var(--r); overflow: hidden;
+      background: var(--bg3); margin-bottom: 18px; position: relative;
+    }
+    .photo-wrap img {
+      width: 100%; height: 100%; object-fit: cover; display: none;
+    }
+    .photo-ph {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 10px; color: var(--muted);
+    }
+    .photo-ph .ico { font-size: 44px; opacity: .35; }
+
+    .q-text {
+      font-size: clamp(15px, 3vw, 18px);
+      font-weight: 500; line-height: 1.5;
+      text-align: center; margin-bottom: 18px;
+    }
+
+    .opts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+    .opt {
+      background: var(--bg3);
+      border: 2px solid transparent;
+      border-radius: var(--rs);
+      padding: 13px 14px;
+      text-align: left; cursor: pointer;
+      color: var(--text); font-size: 14px; line-height: 1.45;
+      transition: all .18s ease;
+    }
+    .opt:hover:not(.locked) {
+      border-color: rgba(201,149,74,.3);
+      background: var(--gold-dim);
+      transform: translateY(-1px);
+    }
+    .opt.right { border-color: var(--green); background: rgba(52,211,153,.1); color: var(--green); }
+    .opt.wrong { border-color: var(--red);   background: rgba(248,113,113,.1); color: var(--red); }
+    .lbl { font-weight: 800; color: var(--gold); margin-right: 5px; }
+    .opt.right .lbl { color: var(--green); }
+    .opt.wrong .lbl { color: var(--red); }
+
+    .fact-box {
+      background: var(--gold-dim);
+      border: 1px solid rgba(201,149,74,.2);
+      border-radius: var(--rs);
+      padding: 12px 15px;
+      font-size: 13px; line-height: 1.65; color: var(--muted);
+      display: none; margin-bottom: 14px;
+    }
+
+    /* ---- results ---- */
+    .score-ring {
+      width: 120px; height: 120px; border-radius: 50%;
+      border: 4px solid var(--gold); background: var(--gold-dim);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      margin: 0 auto 22px;
+    }
+    .score-big { font-size: 44px; font-weight: 800; color: var(--gold); line-height: 1; }
+    .score-of  { font-size: 13px; color: var(--muted); }
+    .grade     { font-size: 20px; font-weight: 700; text-align: center; margin-bottom: 8px; }
+    .grade-msg { font-size: 14px; color: var(--muted); text-align: center; line-height: 1.65; margin-bottom: 24px; }
+    .divider   { height: 1px; background: rgba(255,255,255,.07); margin: 22px 0; }
+
+    /* ---- leaderboard ---- */
+    .lb-header {
+      display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px;
+    }
+    .lb-header h2 { font-size: 20px; font-weight: 700; }
+    .lb-list { list-style: none; }
+    .lb-row {
+      display: flex; align-items: center; gap: 14px;
+      padding: 13px 0; border-bottom: 1px solid rgba(255,255,255,.05);
+    }
+    .lb-row:last-child { border-bottom: none; }
+    .lb-rank { font-size: 13px; font-weight: 800; color: var(--muted); width: 26px; text-align: center; }
+    .lb-rank.r1 { color: #fbbf24; }
+    .lb-rank.r2 { color: #d1d5db; }
+    .lb-rank.r3 { color: #d97706; }
+    .lb-info { flex: 1; }
+    .lb-name { font-size: 15px; }
+    .lb-name.me { color: var(--gold); font-weight: 700; }
+    .lb-bar { height: 3px; background: var(--bg3); border-radius: 99px; margin-top: 5px; overflow: hidden; }
+    .lb-bar-fill { height: 100%; background: var(--gold); border-radius: 99px; }
+    .lb-pts { font-size: 15px; font-weight: 800; }
+
+    .loading { text-align: center; padding: 44px 0; color: var(--muted); }
+    .spin {
+      width: 30px; height: 30px; border-radius: 50%;
+      border: 3px solid var(--bg3); border-top-color: var(--gold);
+      animation: sp .75s linear infinite; margin: 0 auto 14px;
+    }
+    @keyframes sp { to { transform: rotate(360deg); } }
+
+    /* ---- mobile ---- */
+    @media (max-width: 500px) {
+      .opts { grid-template-columns: 1fr; }
+      .exh-title { font-size: 24px; }
+    }
+  </style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- ═══════════════ SVEIKINAME ═══════════════ -->
+<div class="screen on" id="s-welcome">
+  <div style="text-align:center; margin-bottom:28px;">
+    <div class="exh-label" id="lbl-exh">Fotografijų paroda</div>
+    <h1 class="exh-title">Laukinės gamtos<br>viktorina</h1>
+    <p class="exh-sub">10 klausimų · Laimėk prizą!</p>
+  </div>
+  <div class="card">
+    <div class="info-box">
+      🏆 Geriausiai atspėjęs laimės <b id="lbl-prize">50€ vertės foto spaudinį</b>!<br>
+      Rezultatai renkami per visą parodą. Nugalėtojas skelbiamas parodos pabaigoje.
+    </div>
+    <div class="field">
+      <label for="inp-name">Jūsų vardas ir pavardė</label>
+      <input id="inp-name" type="text" placeholder="Įveskite savo vardą..." autocomplete="name" />
+    </div>
+    <button class="btn btn-primary" id="btn-start" onclick="startQuiz()" disabled>
+      Pradėti viktoriną →
+    </button>
+  </div>
+</div>
+
+<!-- ═══════════════ KLAUSIMAS ═══════════════ -->
+<div class="screen" id="s-quiz">
+  <div class="qmeta">
+    <span class="qmeta-left" id="q-num">Klausimas 1 / 10</span>
+    <span class="qmeta-right" id="q-score">✓ 0 taškai</span>
+  </div>
+  <div class="prog-bar"><div class="prog-fill" id="prog" style="width:0%"></div></div>
+
+  <div class="photo-wrap">
+    <img id="q-img" src="" alt="" />
+    <div class="photo-ph" id="q-ph">
+      <div class="ico">📷</div>
+      <div style="font-size:13px">Nuotrauka kraunama…</div>
+    </div>
+  </div>
+
+  <p class="q-text" id="q-text"></p>
+  <div class="opts" id="q-opts"></div>
+  <div class="fact-box" id="q-fact"></div>
+  <button class="btn btn-primary" id="btn-next" onclick="nextQ()" style="display:none"></button>
+</div>
+
+<!-- ═══════════════ REZULTATAI ═══════════════ -->
+<div class="screen" id="s-result">
+  <div style="text-align:center; margin-bottom:24px;">
+    <div class="exh-label">Viktorina baigta!</div>
+  </div>
+  <div class="card">
+    <div class="score-ring">
+      <div class="score-big" id="r-score">0</div>
+      <div class="score-of" id="r-of">/ 10</div>
+    </div>
+    <div class="grade" id="r-grade"></div>
+    <div class="grade-msg" id="r-msg"></div>
+    <div class="divider"></div>
+    <div id="r-submit-sec">
+      <p style="font-size:14px;color:var(--muted);text-align:center;margin-bottom:16px;">
+        Pateikite savo rezultatą į lyderių lentelę:
+      </p>
+      <button class="btn btn-primary" id="btn-submit" onclick="submitScore()">Pateikti rezultatą 🏆</button>
+      <button class="btn btn-ghost" onclick="goLeaderboard()">Žiūrėti lyderių lentelę</button>
+    </div>
+    <div id="r-ok" style="display:none;text-align:center;padding:12px 0;">
+      <div style="font-size:36px;margin-bottom:8px;">🎉</div>
+      <p style="font-weight:700;margin-bottom:4px;">Rezultatas pateiktas!</p>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:18px;">Sėkmės laimėjime!</p>
+      <button class="btn btn-primary" onclick="goLeaderboard()">Lyderių lentelė →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ LYDERIAI ═══════════════ -->
+<div class="screen" id="s-lb">
+  <div class="lb-header">
+    <h2>🏆 Lyderių lentelė</h2>
+    <button class="btn btn-ghost" style="width:auto;padding:8px 16px;font-size:13px" onclick="goWelcome()">
+      Žaisti dar kartą
+    </button>
+  </div>
+  <div id="lb-body">
+    <div class="loading"><div class="spin"></div>Kraunama…</div>
+  </div>
+</div>
+
+</div><!-- /wrap -->
+
+<script>
+/* ────────────────────────────────────────────
+   ⚙️  KONFIGŪRACIJA  —  keiskite čia
+──────────────────────────────────────────── */
+const CFG = {
+  exhibitionName : "Fotografijų paroda 2026",
+  prize          : "50€ vertės foto spaudinį",
+
+  // Po Google Apps Script sąrankos įklijuokite URL:
+  // (palikite "" jei dar nenustatyta — naudos vietinę atmintį)
+  scriptUrl      : "https://script.google.com/macros/s/AKfycbxU-OLrB4syXnkgzoWe-S9Y-8yAMZmQX4RSkFQXKSROp-SqFf56xUntquwt6hfehcc2bA/exec",
+};
+
+/* ────────────────────────────────────────────
+   📸  KLAUSIMAI
+   image   — kelias prie nuotraukos failo
+   correct — teisingas indeksas (0=A 1=B 2=C 3=D)
+──────────────────────────────────────────── */
+const QS = [
+  {
+    image   : "images/1_eglinis_tetervas.jpg",
+    question: "Koks šio paukščio pavadinimas?",
+    options : [
+      "Tetervinas (Lyrurus tetrix)",
+      "Kurtinys (Tetrao urogallus)",
+      "Eglinis tetervas (Falcipennis canadensis)",
+      "Jerubė (Tetrastes bonasia)"
+    ],
+    correct : 2,
+    fact    : "💡 Eglinis tetervas gyvena Šiaurės Amerikos spygliuočių miškuose. Žiemą jis minta beveik vien tik eglių bei pušų spygliais — maistas, kurio dauguma gyvūnų apskritai negali virškinti!"
+  },
+  {
+    image   : "images/2_baltasis_kurtinukas.jpg",
+    question: "Koks unikalus šių paukščių sugebėjimas?",
+    options : [
+      "Jie gali ilgai plaukti po vandeniu",
+      "Jų plunksnos keičia spalvą pagal sezoną",
+      "Jie gali skraidyti atgalios",
+      "Jie nemiegojo žiemos miego"
+    ],
+    correct : 1,
+    fact    : "💡 Baltasis kurtinukas (Lagopus lagopus) žiemą tampa visiškai baltas — tobulas kamufliažas sniege. Vasarą ir rudenį plunksnos grįžta į rudą spalvą. Net kojos apaugusios plunksnomis, tarsi šilti batai!"
+  },
+  {
+    image   : "images/3_kea.jpg",
+    question: "Kur pasaulyje gyvena ši papūga kija (kea)?",
+    options : [
+      "Australijos tropiniuose miškuose",
+      "Naujosios Zelandijos Pietinių Alpių kalnuose",
+      "Pietų Amerikos Andų kalnuose",
+      "Himalajų kalnuose Azijoje"
+    ],
+    correct : 1,
+    fact    : "💡 Kija (Nestor notabilis) — vienintelė pasaulyje kalnų papūga! Gyvena Naujosios Zelandijos kalnuose, dažnai prie sniego ribos. Žinoma dėl išskirtinio intelekto: ji moka atidaryti kuprinių užtrauktukus!"
+  },
+  {
+    image   : "images/4_kojote.jpg",
+    question: "Kaip vadinasi šis šunšeimio plėšrūnas?",
+    options : [
+      "Vilkas (Canis lupus)",
+      "Lapė (Vulpes vulpes)",
+      "Kojotė (Canis latrans)",
+      "Šakalas (Canis aureus)"
+    ],
+    correct : 2,
+    fact    : "💡 Kojotė (Canis latrans) — vienas lanksčiausių Šiaurės Amerikos plėšrūnų. Gali bėgti iki 65 km/h greičiu ir puikiai prisitaiko gyventi net dideliuose miestuose. Maorių legendose ji laikoma apgavike!"
+  },
+  {
+    image   : "images/5_erelis_sede.jpg",
+    question: "Koks šio erelio pavadinimas?",
+    options : [
+      "Auksuotasis erelis (Aquila chrysaetos)",
+      "Plikagalvis erelis (Haliaeetus leucocephalus)",
+      "Jūros erelis (Haliaeetus albicilla)",
+      "Žvejybinis erelis (Pandion haliaetus)"
+    ],
+    correct : 1,
+    fact    : "💡 Plikagalvis erelis (Haliaeetus leucocephalus) — JAV nacionalinis simbolis. Įdomu tai, kad baltosios plunksnos ant galvos atsiranda tik sulaukus 4–5 metų. Jaunikliams galva yra ruda — kaip ir viso kūno plunksnos!"
+  },
+  {
+    image   : "images/6_erelis_skrenda.jpg",
+    question: "Kaip plikagalvis erelis medžioja žuvis?",
+    options : [
+      "Neria po vandeniu kaip pingvinas",
+      "Vaikšto sekliuose vandenyse ir gaudo snapu",
+      "Skrendant kojomis griebia žuvis iš vandens paviršiaus",
+      "Laukia krante ir gaudo žuvis liežuviu"
+    ],
+    correct : 2,
+    fact    : "💡 Plikagalvis erelis — virtuoziškas žvejys! Skrendamas virš vandens, staiga neria žemyn ir kojomis griebia žuvis iš paviršiaus. Jo sparnų plotis gali siekti iki 2,3 metro — didesnis nei daugumos žmonių ūgis!"
+  },
+  {
+    image   : "images/7_geltonakis_pingvinas.jpg",
+    question: "Koks šio pingvino pavadinimas?",
+    options : [
+      "Karališkasis pingvinas (Aptenodytes patagonicus)",
+      "Makaroninis pingvinas (Eudyptes chrysolophus)",
+      "Afrikietiškas pingvinas (Spheniscus demersus)",
+      "Geltonakis pingvinas (Megadyptes antipodes)"
+    ],
+    correct : 3,
+    fact    : "💡 Geltonakis pingvinas — Hoiho maorių kalba — yra viena rečiausių pasaulyje pingvinų rūšių! Skirtingai nuo daugumos pingvinų, jis nekuria kolonijų: lizdus stato tankiuose krūmuose ar miško paunksmėje."
+  },
+  {
+    image   : "images/8_geltonakis_pingvinas_2.jpg",
+    question: "Kuo geltonakis pingvinas skiriasi nuo daugumos kitų pingvinų?",
+    options : [
+      "Jis yra vienintelis pingvinas, galintis skristi",
+      "Jis nekuria kolonijų — lizdus stato atskirai nuo kitų",
+      "Jis minta tik medūzomis",
+      "Jis niekada neišeina į sausumą"
+    ],
+    correct : 1,
+    fact    : "💡 Geltonakis pingvinas (Megadyptes antipodes) nemėgsta kompanijos! Porų lizdai dažnai stovi 50–100 metrų atstumu vienas nuo kito, paslėpti krūmuose ar miške. Kolektyvinė gynyba jiems nerūpi — svarbu privatumas!"
+  },
+  // ⬇️ PAPILDYKITE klausimus 9–10, kai turėsite daugiau nuotraukų:
+  {
+    image   : "images/9.jpg",
+    question: "KLAUSIMAS 9 — pakeiskite šį tekstą",
+    options : ["Atsakymas A", "Atsakymas B", "Atsakymas C", "Atsakymas D"],
+    correct : 0,
+    fact    : "💡 Įrašykite įdomų faktą apie šį gyvūną…"
+  },
+  {
+    image   : "images/10.jpg",
+    question: "KLAUSIMAS 10 — pakeiskite šį tekstą",
+    options : ["Atsakymas A", "Atsakymas B", "Atsakymas C", "Atsakymas D"],
+    correct : 0,
+    fact    : "💡 Įrašykite įdomų faktą apie šį gyvūną…"
+  }
+];
+
+/* ────────────────────────────────────────────
+   🎮  ŽAIDIMO LOGIKA
+──────────────────────────────────────────── */
+const LABS = ['A','B','C','D'];
+
+let G = { name:'', qi:0, score:0, answered:false, submitted:false };
+
+// Init UI labels
+document.getElementById('lbl-exh').textContent   = CFG.exhibitionName;
+document.getElementById('lbl-prize').textContent = CFG.prize;
+
+// Name field
+const inp = document.getElementById('inp-name');
+inp.addEventListener('input', () => {
+  document.getElementById('btn-start').disabled = inp.value.trim().length < 2;
+});
+inp.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && inp.value.trim().length >= 2) startQuiz();
+});
+
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('on'));
+  document.getElementById(id).classList.add('on');
+  window.scrollTo({ top:0, behavior:'smooth' });
+}
+
+/* ---- start ---- */
+function startQuiz() {
+  const name = inp.value.trim();
+  if (name.length < 2) return;
+  G = { name, qi:0, score:0, answered:false, submitted:false };
+  show('s-quiz');
+  renderQ();
+}
+
+/* ---- render question ---- */
+function renderQ() {
+  const q   = QS[G.qi];
+  const tot = QS.length;
+
+  document.getElementById('q-num').textContent   = `Klausimas ${G.qi+1} / ${tot}`;
+  document.getElementById('q-score').textContent = `✓ ${G.score} ${pts(G.score)}`;
+  document.getElementById('prog').style.width    = `${(G.qi/tot)*100}%`;
+
+  // Photo
+  const img = document.getElementById('q-img');
+  const ph  = document.getElementById('q-ph');
+  img.style.display = 'none';
+  ph.style.display  = 'flex';
+  ph.innerHTML = '<div class="ico">📷</div><div style="font-size:13px">Nuotrauka kraunama…</div>';
+  img.onload  = () => { img.style.display='block'; ph.style.display='none'; };
+  img.onerror = () => {
+    ph.innerHTML = `<div class="ico">🖼️</div>
+      <div style="font-size:11px;text-align:center;opacity:.6">
+        Nuotrauka nerasta<br><code>${q.image}</code>
+      </div>`;
+  };
+  img.src = q.image;
+
+  // Question
+  document.getElementById('q-text').textContent = q.question;
+
+  // Options
+  const grid = document.getElementById('q-opts');
+  grid.innerHTML = '';
+  q.options.forEach((opt, i) => {
+    const b = document.createElement('button');
+    b.className = 'opt';
+    b.innerHTML = `<span class="lbl">${LABS[i]}.</span>${esc(opt)}`;
+    b.onclick = () => pick(i);
+    grid.appendChild(b);
+  });
+
+  document.getElementById('q-fact').style.display = 'none';
+  document.getElementById('btn-next').style.display = 'none';
+  G.answered = false;
+}
+
+/* ---- pick answer ---- */
+function pick(i) {
+  if (G.answered) return;
+  G.answered = true;
+  const q = QS[G.qi];
+  if (i === q.correct) G.score++;
+
+  document.querySelectorAll('.opt').forEach((b, idx) => {
+    b.classList.add('locked');
+    if (idx === q.correct) b.classList.add('right');
+    else if (idx === i && i !== q.correct) b.classList.add('wrong');
+  });
+
+  const fb = document.getElementById('q-fact');
+  fb.textContent = q.fact;
+  fb.style.display = 'block';
+
+  document.getElementById('q-score').textContent = `✓ ${G.score} ${pts(G.score)}`;
+
+  const bn = document.getElementById('btn-next');
+  bn.textContent    = G.qi === QS.length-1 ? 'Baigti viktoriną ✓' : 'Kitas klausimas →';
+  bn.style.display  = 'flex';
+}
+
+/* ---- next question ---- */
+function nextQ() {
+  G.qi++;
+  if (G.qi >= QS.length) showResult();
+  else renderQ();
+}
+
+/* ---- results ---- */
+function showResult() {
+  const s = G.score, t = QS.length, p = s/t;
+  document.getElementById('r-score').textContent = s;
+  document.getElementById('r-of').textContent    = `/ ${t}`;
+
+  let grade, msg;
+  if (p===1)      { grade='🏆 Tobulas rezultatas!'; msg='Nuostabu! Atspėjote visus gyvūnus. Esate tikras laukinės gamtos ekspertas!'; }
+  else if(p>=.8)  { grade='⭐ Puiku!';              msg='Labai geras rezultatas! Jūs puikiai pažįstate laukinę gamtą.'; }
+  else if(p>=.6)  { grade='👍 Gerai!';              msg='Neblogas rezultatas! Dar truputis ir būsite čempionas.'; }
+  else if(p>=.4)  { grade='🌱 Pradedantysis';       msg='Geras bandymas! Paroda tikrai padės sužinoti daugiau apie šiuos nuostabius gyvūnus.'; }
+  else            { grade='🔍 Gamtos tyrinėtojas';  msg='Pabandykite dar kartą! Šie gyvūnai laukia, kol juos pažinsite.'; }
+
+  document.getElementById('r-grade').textContent = grade;
+  document.getElementById('r-msg').textContent   = msg;
+  document.getElementById('r-submit-sec').style.display = 'block';
+  document.getElementById('r-ok').style.display         = 'none';
+  document.getElementById('btn-submit').disabled        = false;
+  document.getElementById('btn-submit').textContent     = 'Pateikti rezultatą 🏆';
+
+  show('s-result');
+}
+
+/* ---- submit score ---- */
+async function submitScore() {
+  if (G.submitted) return;
+  const btn = document.getElementById('btn-submit');
+  btn.disabled = true; btn.textContent = 'Pateikiama…';
+
+  const payload = {
+    name     : G.name,
+    score    : G.score,
+    total    : QS.length,
+    timestamp: new Date().toISOString()
+  };
+
+  if (!CFG.scriptUrl) {
+    // Demo režimas: saugoti naršyklės atmintyje
+    const arr = JSON.parse(localStorage.getItem('vq_scores')||'[]');
+    arr.push(payload);
+    localStorage.setItem('vq_scores', JSON.stringify(arr));
+    G.submitted = true;
+    document.getElementById('r-submit-sec').style.display = 'none';
+    document.getElementById('r-ok').style.display         = 'block';
+    return;
+  }
+
+  try {
+    await fetch(CFG.scriptUrl, {
+      method : 'POST',
+      mode   : 'no-cors',
+      headers: { 'Content-Type':'application/json' },
+      body   : JSON.stringify(payload)
+    });
+    G.submitted = true;
+    document.getElementById('r-submit-sec').style.display = 'none';
+    document.getElementById('r-ok').style.display         = 'block';
+  } catch(e) {
+    btn.disabled = false; btn.textContent = 'Bandyti dar kartą';
+    alert('Klaida pateikiant rezultatą. Patikrinkite interneto ryšį.');
+  }
+}
+
+/* ---- leaderboard ---- */
+async function goLeaderboard() {
+  show('s-lb');
+  const body = document.getElementById('lb-body');
+  body.innerHTML = '<div class="loading"><div class="spin"></div>Kraunama…</div>';
+
+  let scores = [];
+
+  if (!CFG.scriptUrl) {
+    scores = JSON.parse(localStorage.getItem('vq_scores')||'[]')
+             .sort((a,b) => b.score - a.score);
+  } else {
+    try {
+      const r = await fetch(CFG.scriptUrl + '?action=lb');
+      scores  = await r.json();
+    } catch(e) {
+      body.innerHTML = `
+        <div class="card" style="text-align:center;padding:40px">
+          <p style="color:var(--muted);font-size:14px">Nepavyko gauti duomenų.<br>Patikrinkite interneto ryšį.</p>
+          <div style="height:14px"></div>
+          <button class="btn btn-ghost" style="width:auto;padding:10px 20px" onclick="goLeaderboard()">
+            Bandyti dar kartą
+          </button>
+        </div>`;
+      return;
+    }
+  }
+
+  renderLB(scores);
+}
+
+function renderLB(scores) {
+  const body = document.getElementById('lb-body');
+  if (!scores.length) {
+    body.innerHTML = `
+      <div class="card" style="text-align:center;padding:48px">
+        <p style="font-size:36px;margin-bottom:12px">🎯</p>
+        <p style="color:var(--muted)">Kol kas nėra rezultatų.<br>Būkite pirmasis!</p>
+      </div>`;
+    return;
+  }
+  const top = scores[0]?.score || 1;
+  const em  = ['🥇','🥈','🥉'];
+
+  body.innerHTML = `
+    <div class="card">
+      <ul class="lb-list">
+        ${scores.map((s,i) => `
+          <li class="lb-row">
+            <span class="lb-rank ${i<3?'r'+(i+1):''}">${i<3?em[i]:i+1}</span>
+            <div class="lb-info">
+              <div class="lb-name ${s.name===G.name?'me':''}">
+                ${esc(s.name)}${s.name===G.name?' &nbsp;← Jūs':''}
+              </div>
+              <div class="lb-bar">
+                <div class="lb-bar-fill" style="width:${Math.round(s.score/top*100)}%"></div>
+              </div>
+            </div>
+            <span class="lb-pts">${s.score}/${s.total||QS.length}</span>
+          </li>`).join('')}
+      </ul>
+    </div>
+    <div style="margin-top:12px;text-align:center;font-size:12px;color:var(--muted)">
+      Iš viso dalyvių: <b>${scores.length}</b>
+    </div>`;
+}
+
+function goWelcome() {
+  G = { name:G.name, qi:0, score:0, answered:false, submitted:false };
+  show('s-welcome');
+}
+
+/* ---- helpers ---- */
+function pts(n) {
+  if (n===1) return 'taškas';
+  if (n>=2 && n<=9) return 'taškai';
+  return 'taškų';
+}
+function esc(s) {
+  const d=document.createElement('div');
+  d.appendChild(document.createTextNode(s));
+  return d.innerHTML;
+}
+</script>
+</body>
+</html>
