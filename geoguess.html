@@ -1,0 +1,1072 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <title>Gyvūnų geografija</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <style>
+    :root {
+      --bg:        #0c0c0e;
+      --bg2:       #171719;
+      --bg3:       #222226;
+      --gold:      #c9954a;
+      --gold-lt:   #e8b46e;
+      --gold-dim:  rgba(201,149,74,.13);
+      --text:      #f0ede8;
+      --muted:     #9a9490;
+      --green:     #34d399;
+      --yellow:    #fbbf24;
+      --orange:    #f97316;
+      --red:       #f87171;
+      --r:         14px;
+      --rs:        9px;
+      --t:         .26s ease;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%; overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg); color: var(--text);
+    }
+
+    /* ── SCREENS ─────────────────────────────────── */
+    .screen { display: none; position: absolute; inset: 0; }
+    .screen.on { display: flex; flex-direction: column; animation: rise .32s ease both; }
+    .scroll-screen.on { overflow-y: auto; align-items: center; justify-content: flex-start; padding: 20px 16px 56px; }
+    @keyframes rise { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+
+    .wrap { width: 100%; max-width: 520px; }
+
+    /* ── TYPOGRAPHY ──────────────────────────────── */
+    .exh-label { font-size:11px; font-weight:700; letter-spacing:3px; text-transform:uppercase; color:var(--gold); margin-bottom:6px; }
+    .exh-title { font-size:clamp(26px,6vw,38px); font-weight:300; letter-spacing:-.5px; line-height:1.15; margin-bottom:8px; }
+    .exh-sub   { color:var(--muted); font-size:15px; margin-bottom:28px; line-height:1.5; }
+    .card      { background:var(--bg2); border:1px solid rgba(255,255,255,.06); border-radius:var(--r); padding:24px; }
+    .info-box  { background:var(--gold-dim); border:1px solid rgba(201,149,74,.22); border-radius:var(--rs); padding:14px 16px; font-size:13.5px; line-height:1.7; color:var(--muted); margin-bottom:22px; }
+    .info-box b { color:var(--gold-lt); }
+
+    /* ── FORM ────────────────────────────────────── */
+    .field { margin-bottom:16px; }
+    .field label { display:block; font-size:13px; color:var(--muted); font-weight:600; margin-bottom:7px; }
+    .field input { width:100%; background:var(--bg3); border:1.5px solid rgba(255,255,255,.1); border-radius:var(--rs); padding:13px 15px; color:var(--text); font-size:16px; outline:none; transition:border-color var(--t); }
+    .field input:focus { border-color:var(--gold); }
+
+    /* ── BUTTONS ─────────────────────────────────── */
+    .btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; border:none; border-radius:var(--rs); cursor:pointer; font-size:15px; font-weight:600; padding:14px 24px; transition:all var(--t); -webkit-tap-highlight-color:transparent; }
+    .btn-primary { background:var(--gold); color:#0d0d0d; width:100%; font-size:16px; padding:16px; }
+    .btn-primary:active:not(:disabled) { transform:scale(.97); background:var(--gold-lt); }
+    .btn-primary:disabled { opacity:.38; cursor:not-allowed; }
+    .btn-ghost { background:transparent; color:var(--muted); border:1.5px solid rgba(255,255,255,.13); width:100%; margin-top:10px; }
+    .btn-ghost:active { color:var(--text); border-color:rgba(255,255,255,.28); }
+
+    /* ── TOP BAR ─────────────────────────────────── */
+    .game-bar {
+      flex-shrink:0; background:var(--bg2);
+      border-bottom:1px solid rgba(255,255,255,.07);
+      padding:9px 14px; display:flex; align-items:center; gap:10px; z-index:10;
+    }
+    .q-label    { font-size:12px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:2px; flex-shrink:0; }
+    .prog-bar   { flex:1; height:4px; background:var(--bg3); border-radius:99px; overflow:hidden; }
+    .prog-fill  { height:100%; background:var(--gold); border-radius:99px; transition:width .4s ease; }
+    .score-label{ font-size:13px; font-weight:700; color:var(--gold); flex-shrink:0; min-width:54px; text-align:right; transition:color .3s; }
+
+    /* ── GAME BODY (Street View + overlays) ──────── */
+    #s-game-body {
+      flex:1; position:relative; overflow:hidden;
+      background:#000;
+    }
+
+    /* Street View panorama fills entire game body */
+    #streetview {
+      position:absolute; inset:0;
+      background:#111;
+    }
+
+    /* Fallback: static photo (shown when no Street View) */
+    #photo-fallback {
+      position:absolute; inset:0;
+      display:none; /* hidden by default, shown when SV unavailable */
+      align-items:center; justify-content:center;
+      background:#000;
+    }
+    #photo-fallback img {
+      max-width:100%; max-height:100%;
+      object-fit:contain; display:block;
+    }
+
+    /* ── ANIMAL THUMBNAIL (top-left overlay) ─────── */
+    #animal-thumb-wrap {
+      position:absolute; top:10px; left:10px; z-index:900;
+      width:110px;
+      background:rgba(12,12,14,.88);
+      border:1.5px solid rgba(255,255,255,.18);
+      border-radius:10px; overflow:hidden;
+      box-shadow:0 3px 16px rgba(0,0,0,.6);
+      transition:width .25s ease, opacity .25s ease;
+      cursor:pointer;
+    }
+    #animal-thumb-wrap.enlarged {
+      width:220px;
+    }
+    #animal-thumb-wrap img {
+      width:100%; aspect-ratio:4/3;
+      object-fit:cover; display:block;
+    }
+    #animal-thumb-name {
+      padding:5px 8px;
+      font-size:10px; font-weight:700;
+      color:var(--gold-lt);
+      text-align:center;
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    }
+
+    /* ── MINI-MAP OVERLAY (bottom-right) ─────────── */
+    #mini-map-wrap {
+      position:absolute;
+      bottom:80px; right:12px;
+      width:240px; height:180px;
+      border-radius:10px; overflow:hidden;
+      border:2px solid rgba(255,255,255,.25);
+      box-shadow:0 4px 22px rgba(0,0,0,.7);
+      transition:all .3s cubic-bezier(.4,0,.2,1);
+      z-index:900;
+      cursor:pointer;
+    }
+    #mini-map-wrap.expanded {
+      bottom:0; right:0;
+      width:100%; height:55%;
+      border-radius:0;
+      border:none;
+      border-top:2px solid rgba(255,255,255,.1);
+    }
+    #map { width:100%; height:100%; }
+
+    /* Mini-map expand/collapse button */
+    #map-toggle-btn {
+      position:absolute; top:6px; right:6px;
+      background:rgba(12,12,14,.85);
+      border:1px solid rgba(255,255,255,.2);
+      color:var(--text); font-size:11px; font-weight:700;
+      padding:3px 8px; border-radius:6px;
+      cursor:pointer; z-index:901;
+      -webkit-tap-highlight-color:transparent;
+      transition:background .2s;
+    }
+    #map-toggle-btn:active { background:rgba(0,0,0,.95); }
+
+    /* Mini-map label when collapsed */
+    #mini-map-label {
+      position:absolute; bottom:0; left:0; right:0;
+      background:rgba(0,0,0,.55);
+      font-size:10px; font-weight:700; letter-spacing:.5px;
+      color:rgba(255,255,255,.7); text-align:center;
+      padding:3px 0; pointer-events:none;
+    }
+    #mini-map-wrap.expanded #mini-map-label { display:none; }
+
+    /* MAP result screen */
+    #result-map { flex:1; }
+
+    /* Floating confirm button */
+    .confirm-wrap {
+      position:absolute; bottom:0; left:0; right:0;
+      padding:10px 14px 18px; z-index:1001; pointer-events:none;
+    }
+    .confirm-wrap .btn { pointer-events:all; box-shadow:0 4px 28px rgba(0,0,0,.6); transition:all .22s; }
+
+    /* No Street View notice */
+    #sv-notice {
+      position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+      background:rgba(0,0,0,.7); color:var(--muted);
+      padding:12px 20px; border-radius:var(--rs);
+      font-size:13px; text-align:center; display:none; z-index:5;
+    }
+
+    /* ── ROUND RESULT ────────────────────────────── */
+    #s-round-result { overflow:hidden; }
+
+    .result-panel {
+      flex-shrink:0; background:var(--bg2);
+      border-top:1px solid rgba(255,255,255,.08);
+      padding:14px 16px 20px;
+    }
+    .result-top  { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:6px; }
+    .result-left { flex:1; min-width:0; }
+    .result-animal { font-size:15px; font-weight:700; margin-bottom:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .result-region { font-size:12px; color:var(--muted); margin-bottom:6px; }
+    .result-context{ font-size:13px; font-weight:600; margin-bottom:10px; }
+    .result-pts  { font-size:30px; font-weight:800; line-height:1; flex-shrink:0; margin-left:14px; text-align:right; }
+    .result-pts span { font-size:12px; font-weight:400; color:var(--muted); display:block; }
+
+    /* Score bar */
+    .score-bar-wrap { height:5px; background:var(--bg3); border-radius:99px; overflow:hidden; margin-bottom:12px; }
+    .score-bar-fill { height:100%; border-radius:99px; width:0; transition:width .8s cubic-bezier(.4,0,.2,1); }
+
+    /* ── FINAL SCREEN ────────────────────────────── */
+    .score-ring { width:110px; height:110px; border-radius:50%; border:4px solid var(--gold); background:var(--gold-dim); display:flex; flex-direction:column; align-items:center; justify-content:center; margin:0 auto 20px; }
+    .score-big  { font-size:34px; font-weight:800; color:var(--gold); line-height:1; }
+    .score-of   { font-size:12px; color:var(--muted); }
+    .grade      { font-size:19px; font-weight:700; text-align:center; margin-bottom:5px; }
+    .grade-msg  { font-size:14px; color:var(--muted); text-align:center; line-height:1.6; margin-bottom:20px; }
+    .divider    { height:1px; background:rgba(255,255,255,.07); margin:18px 0; }
+
+    /* Recap map */
+    .recap-map-wrap {
+      width:100%; height:240px; border-radius:var(--r); overflow:hidden;
+      border:1px solid rgba(255,255,255,.08); margin-bottom:6px;
+    }
+    #recap-map { width:100%; height:100%; }
+    .recap-label { font-size:11px; color:var(--muted); text-align:center; margin-bottom:14px; letter-spacing:.5px; }
+
+    /* Round summary */
+    .round-list { list-style:none; }
+    .round-row  { display:flex; align-items:center; gap:8px; padding:8px 0; border-bottom:1px solid rgba(255,255,255,.05); font-size:13px; }
+    .round-row:last-child { border-bottom:none; }
+    .round-num  { font-size:11px; font-weight:700; color:var(--muted); width:18px; text-align:center; flex-shrink:0; }
+    .round-name { flex:1; color:var(--text); font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .round-dist { color:var(--muted); font-size:12px; white-space:nowrap; }
+    .round-pts  { font-weight:800; width:42px; text-align:right; flex-shrink:0; }
+
+    /* ── LEADERBOARD ─────────────────────────────── */
+    .lb-header  { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
+    .lb-header h2 { font-size:19px; font-weight:700; }
+    .lb-list    { list-style:none; }
+    .lb-row     { display:flex; align-items:center; gap:12px; padding:11px 0; border-bottom:1px solid rgba(255,255,255,.05); }
+    .lb-row:last-child { border-bottom:none; }
+    .lb-rank    { font-size:13px; font-weight:800; color:var(--muted); width:22px; text-align:center; flex-shrink:0; }
+    .lb-rank.r1 { color:#fbbf24; } .lb-rank.r2 { color:#d1d5db; } .lb-rank.r3 { color:#d97706; }
+    .lb-info    { flex:1; min-width:0; }
+    .lb-name    { font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .lb-name.me { color:var(--gold); font-weight:700; }
+    .lb-bar     { height:3px; background:var(--bg3); border-radius:99px; margin-top:4px; overflow:hidden; }
+    .lb-bar-fill{ height:100%; background:var(--gold); border-radius:99px; }
+    .lb-pts     { font-size:14px; font-weight:800; flex-shrink:0; }
+    .lb-pct     { font-size:11px; color:var(--muted); flex-shrink:0; margin-left:2px; }
+    .loading    { text-align:center; padding:40px 0; color:var(--muted); }
+    .spin       { width:28px; height:28px; border-radius:50%; border:3px solid var(--bg3); border-top-color:var(--gold); animation:sp .75s linear infinite; margin:0 auto 12px; }
+    @keyframes sp { to { transform:rotate(360deg); } }
+
+    /* Leaflet popup override */
+    .leaflet-popup-content-wrapper { background:var(--bg2) !important; color:var(--text) !important; border:1px solid rgba(255,255,255,.1) !important; border-radius:8px !important; box-shadow:0 4px 16px rgba(0,0,0,.5) !important; font-family:inherit !important; }
+    .leaflet-popup-tip { background:var(--bg2) !important; }
+    .leaflet-popup-content { font-size:13px !important; line-height:1.5 !important; margin:10px 14px !important; }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════
+  WELCOME
+══════════════════════════════════════════ -->
+<div class="screen scroll-screen on" id="s-welcome">
+  <div class="wrap">
+    <div style="text-align:center; margin-bottom:32px; padding-top:10px;">
+      <div class="exh-label" id="lbl-exh">Fotografijų paroda</div>
+      <h1 class="exh-title">Gyvūnų<br>geografija</h1>
+      <p class="exh-sub">10 gyvūnų · Apsidairyk Street View panoramoje · Spėk lokaciją · Maks. 5 000 taškų</p>
+    </div>
+    <div class="card">
+      <div class="info-box">
+        🗺️ <b>Kaip žaisti:</b> kiekvieną rundą matysi 360° Street View panoramą iš vietos, kur buvo nufotografuotas gyvūnas. Apsidairyk, pasukinėk vaizdą — ir spėk žemėlapyje, kur tai yra!<br><br>
+        Kairėje viršuje matysi gyvūno nuotrauką kaip <b>užuominą</b>. Kuo arčiau tikros vietos spėsi — tuo daugiau taškų! Iš viso <b>10 gyvūnų</b>, maks. <b>500 taškų</b> kiekvienam.<br><br>
+        🏆 Rezultatai renkami per visą parodą. Nugalėtojas skelbiamas pabaigoje.
+      </div>
+      <div class="field">
+        <label for="inp-nick">Žaidėjo slapyvardis <span style="font-weight:400;color:var(--muted)">(matomas lyderių lentelėje)</span></label>
+        <input id="inp-nick" type="text" placeholder="pvz. Laukinis keliautojas" autocomplete="off" maxlength="40"/>
+      </div>
+      <div class="field">
+        <label for="inp-name">Vardas ir pavardė</label>
+        <input id="inp-name" type="text" placeholder="Jūsų vardas ir pavardė" autocomplete="name"/>
+      </div>
+      <div class="field">
+        <label for="inp-email">El. paštas</label>
+        <input id="inp-email" type="email" placeholder="jusu@gmail.com" autocomplete="email"/>
+      </div>
+      <p style="font-size:11.5px;color:var(--muted);line-height:1.55;margin-bottom:16px;">
+        🔒 Vardas, pavardė ir el. paštas yra konfidencialūs — juos matys tik parodos organizatorius.
+      </p>
+      <div id="form-error" style="display:none;color:#e57373;font-size:13px;margin-bottom:10px;text-align:center;"></div>
+      <button class="btn btn-primary" id="btn-start" onclick="startGame()">Pradėti žaidimą →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+  GAME
+══════════════════════════════════════════ -->
+<div class="screen" id="s-game">
+  <div class="game-bar">
+    <span class="q-label" id="g-num">1 / 10</span>
+    <div class="prog-bar"><div class="prog-fill" id="g-prog" style="width:0%"></div></div>
+    <span class="score-label" id="g-score">0 pt.</span>
+  </div>
+
+  <!-- Game body: Street View + overlays -->
+  <div id="s-game-body">
+
+    <!-- Google Street View panorama (fills entire area) -->
+    <div id="streetview"></div>
+
+    <!-- Fallback: static photo when no Street View available -->
+    <div id="photo-fallback">
+      <img id="g-img-fallback" src="" alt="gyvūno nuotrauka"/>
+      <div id="sv-notice">📷 Street View nepasiekiamas šioje vietoje.<br>Naudokite nuotrauką kaip užuominą!</div>
+    </div>
+
+    <!-- Animal photo thumbnail (top-left overlay) -->
+    <div id="animal-thumb-wrap" onclick="toggleThumb()">
+      <img id="g-img" src="" alt="gyvūno nuotrauka"/>
+      <div id="animal-thumb-name"></div>
+    </div>
+
+    <!-- Mini-map overlay (bottom-right, bigger) -->
+    <div id="mini-map-wrap" onclick="handleMapAreaClick(event)">
+      <div id="map"></div>
+      <button id="map-toggle-btn" onclick="event.stopPropagation(); toggleMiniMap()">⛶ Didinti</button>
+      <div id="mini-map-label">🗺️ SPUSTELK VIETĄ</div>
+    </div>
+
+    <!-- Floating confirm button -->
+    <div class="confirm-wrap">
+      <button class="btn btn-primary" id="btn-confirm" disabled onclick="confirmGuess()">
+        Spustelk žemėlapyje, kad pažymėtum vietą
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+  ROUND RESULT
+══════════════════════════════════════════ -->
+<div class="screen" id="s-round-result">
+  <div class="game-bar">
+    <span class="q-label" id="rr-num">1 / 10</span>
+    <div class="prog-bar"><div class="prog-fill" id="rr-prog"></div></div>
+    <span class="score-label" id="rr-score">0 pt.</span>
+  </div>
+
+  <div id="result-map"></div>
+
+  <div class="result-panel">
+    <div class="result-top">
+      <div class="result-left">
+        <div class="result-animal" id="rr-animal"></div>
+        <div class="result-region" id="rr-region"></div>
+        <div class="result-context" id="rr-context"></div>
+      </div>
+      <div class="result-pts" id="rr-pts">0 <span>taškų</span></div>
+    </div>
+    <div class="score-bar-wrap">
+      <div class="score-bar-fill" id="rr-bar"></div>
+    </div>
+    <button class="btn btn-primary" id="btn-next-round" onclick="nextRound()">Kitas gyvūnas →</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+  FINAL SCORE
+══════════════════════════════════════════ -->
+<div class="screen scroll-screen" id="s-final">
+  <div class="wrap">
+    <div style="text-align:center;margin-bottom:22px;padding-top:10px;">
+      <div class="exh-label">Žaidimas baigtas!</div>
+    </div>
+    <div class="card">
+      <div class="score-ring">
+        <div class="score-big" id="f-score">0</div>
+        <div class="score-of">/ 5000</div>
+      </div>
+      <div class="grade"    id="f-grade"></div>
+      <div class="grade-msg" id="f-msg"></div>
+
+      <!-- Recap world map -->
+      <div class="divider"></div>
+      <p style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:10px;">Visi spėjimai žemėlapyje</p>
+      <div class="recap-map-wrap">
+        <div id="recap-map"></div>
+      </div>
+      <p class="recap-label">🟢 Tiksli vieta &nbsp;·&nbsp; 🔴 Tavo spėjimas</p>
+
+      <!-- Per-round breakdown -->
+      <div class="divider"></div>
+      <p style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:10px;">Rungtys</p>
+      <ul class="round-list" id="f-rounds"></ul>
+
+      <div class="divider"></div>
+      <div id="f-submit-sec">
+        <p style="font-size:14px;color:var(--muted);text-align:center;margin-bottom:14px;">Pateikite savo rezultatą į lyderių lentelę:</p>
+        <button class="btn btn-primary" id="btn-final-submit" onclick="submitScore()">Pateikti rezultatą 🏆</button>
+        <button class="btn btn-ghost" onclick="goLeaderboard()">Žiūrėti lyderių lentelę</button>
+      </div>
+      <div id="f-ok" style="display:none;text-align:center;padding:10px 0;">
+        <div style="font-size:36px;margin-bottom:8px;">🎉</div>
+        <p style="font-weight:700;margin-bottom:4px;">Rezultatas pateiktas!</p>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:18px;">Sėkmės laimėjime!</p>
+        <button class="btn btn-primary" onclick="goLeaderboard()">Lyderių lentelė →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+  LEADERBOARD
+══════════════════════════════════════════ -->
+<div class="screen scroll-screen" id="s-lb">
+  <div class="wrap" style="padding-top:8px;">
+    <div class="lb-header">
+      <h2>🏆 Lyderių lentelė</h2>
+      <button class="btn btn-ghost" style="width:auto;padding:8px 14px;font-size:13px" onclick="goWelcome()">
+        Žaisti dar kartą
+      </button>
+    </div>
+    <div id="lb-body">
+      <div class="loading"><div class="spin"></div>Kraunama…</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+  SCRIPTS
+══════════════════════════════════════════ -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+"use strict";
+
+/* ─────────────────────────────────────────
+   ⚙️  KONFIGŪRACIJA
+───────────────────────────────────────── */
+const CFG = {
+  exhibitionName : "Fotografijų paroda 2026",
+  gameType       : "geo",
+  scriptUrl      : "https://script.google.com/macros/s/AKfycbxU-OLrB4syXnkgzoWe-S9Y-8yAMZmQX4RSkFQXKSROp-SqFf56xUntquwt6hfehcc2bA/exec",
+
+  // ⬇️ ČIA ĮRAŠYK SAVO GOOGLE MAPS API RAKTĄ ⬇️
+  googleApiKey   : "AIzaSyDuXSx18ZhMyD0S1IA2yRUHuzG8uLnwFr4",
+  // Paieškos spindulys (metrais) — kiek toli nuo koordinačių ieškoti Street View panoramos
+  svRadius       : 50000,
+};
+
+/* ─────────────────────────────────────────
+   🦁  GYVŪNAI
+───────────────────────────────────────── */
+const ANIMALS = [
+  { name:"Kėja / Kea",                                image:"images/5-1 kea alpine parrot Large.jpeg",  lat:-44.80106, lng: 168.02156, region:"Naujoji Zelandija · Fiordland" },
+  { name:"Kaka / Kaka",                               image:"images/4-1 kaka Large.jpeg",               lat:-45.77667, lng: 170.60403, region:"Naujoji Zelandija · Dunedin" },
+  { name:"NZ kailinis ruonis / NZ Fur Seal",          image:"images/1-1 - nz fur seal Large.jpeg",      lat:-45.39583, lng: 170.86869, region:"Naujoji Zelandija · Otago" },
+  { name:"NZ karvelis / NZ Wood Pigeon",              image:"images/2-1 nz wood pigeon Large.jpeg",     lat:-44.64792, lng: 168.12239, region:"Naujoji Zelandija · Queenstown" },
+  { name:"Geltonakis pingvinas / Yellow-eyed Penguin",image:"images/3-1 yellow eyed penguin Large.jpeg",lat:-45.12233, lng: 170.97989, region:"Naujoji Zelandija · Otago pusiasalis" },
+  { name:"Rudasis lokys / Brown Bear",                image:"images/7-1brown bear Large.jpeg",          lat: 61.25506, lng:-138.81083, region:"Kanada · Jukonas" },
+  { name:"Kryžminė lapė / Cross Fox",                 image:"images/6-11 red fox Large.jpeg",           lat: 67.18758, lng:-135.69197, region:"Kanada · Šiaurės Vakarų Teritorijos" },
+  { name:"Baltagalvis erelis / Bald Eagle",           image:"images/6-1 bald eagle Large.jpeg",         lat: 60.73542, lng:-135.10067, region:"Kanada · Jukonas" },
+  { name:"Kojotas / Coyote",                          image:"images/8-1 coyote Large.jpeg",             lat: 60.73542, lng:-135.10067, region:"Kanada · Jukonas" },
+  { name:"Ursonas / Porcupine",                       image:"images/10-1 canadian porcupine Large.jpeg",lat: 59.48514, lng:-133.59944, region:"Kanada · Šiaurės Britų Kolumbija" },
+];
+
+/* ─────────────────────────────────────────
+   🎮  ŽAIDIMO BŪSENA
+───────────────────────────────────────── */
+let G = newState();
+
+function newState() {
+  return { nick:'', fullName:'', email:'', qi:0, totalScore:0, history:[], submitted:false };
+}
+
+// Map & Street View instances
+let gameMap        = null;
+let resultMap      = null;
+let recapMap       = null;
+let guessMarker    = null;
+let rrGuessMarker  = null;
+let rrCorrectMarker= null;
+let rrLine         = null;
+let currentGuessLL = null;
+let svPano         = null;   // Google Street View Panorama
+let svService      = null;   // StreetViewService
+let gmapsReady     = false;  // Is Google Maps JS API loaded?
+
+/* ─────────────────────────────────────────
+   🖥️  EKRANŲ VALDYMAS
+───────────────────────────────────────── */
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('on'));
+  const el = document.getElementById(id);
+  el.classList.add('on');
+  window.scrollTo({ top:0, behavior:'smooth' });
+}
+
+/* ─────────────────────────────────────────
+   🧮  MATEMATIKA
+───────────────────────────────────────── */
+function haversineKm(lat1, lon1, lat2, lon2) {
+  const R    = 6371;
+  const dLat = (lat2-lat1)*Math.PI/180;
+  const dLon = (lon2-lon1)*Math.PI/180;
+  const a    = Math.sin(dLat/2)**2
+             + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+
+function calcScore(km) {
+  return Math.max(0, Math.round(500 * Math.exp(-km / 2000)));
+}
+
+function fmtDist(km) {
+  if (km < 1)   return Math.round(km*1000) + ' m';
+  if (km < 100) return km.toFixed(1) + ' km';
+  return Math.round(km).toLocaleString() + ' km';
+}
+
+function scoreColor(pts) {
+  if (pts >= 400) return 'var(--green)';
+  if (pts >= 250) return 'var(--yellow)';
+  if (pts >= 100) return 'var(--orange)';
+  return 'var(--red)';
+}
+
+function distContext(km) {
+  if (km < 50)   return '🎯 Neticimas tikslumas!';
+  if (km < 150)  return '✅ Labai arti!';
+  if (km < 500)  return '👍 Tame pačiame regione';
+  if (km < 1500) return '🛫 Šalimais!';
+  if (km < 5000) return '🌍 Kitame kontinente';
+  return '🌏 Kitas pasaulio kraštas';
+}
+
+/* ─────────────────────────────────────────
+   📍  ŽYMEKLIAI (PINS)
+───────────────────────────────────────── */
+function makePin(color, size = 18) {
+  const s = size;
+  return L.divIcon({
+    className:'',
+    html:`<div style="width:${s}px;height:${s}px;background:${color};border:2.5px solid #fff;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,.55)"></div>`,
+    iconSize:[s,s], iconAnchor:[s/2,s/2],
+  });
+}
+
+function makeNumberPin(n, color) {
+  return L.divIcon({
+    className:'',
+    html:`<div style="width:22px;height:22px;background:${color};border:2px solid #fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:#fff;box-shadow:0 2px 8px rgba(0,0,0,.55)">${n}</div>`,
+    iconSize:[22,22], iconAnchor:[11,11],
+  });
+}
+
+/* ─────────────────────────────────────────
+   ✨  ANIMACIJOS
+───────────────────────────────────────── */
+function animateCount(el, from, to, ms) {
+  const start = performance.now();
+  function tick(now) {
+    const p = Math.min((now-start)/ms, 1);
+    const e = 1 - Math.pow(1-p, 3);
+    el.textContent = Math.round(from + (to-from)*e);
+    if (p < 1) requestAnimationFrame(tick);
+    else el.textContent = to;
+  }
+  requestAnimationFrame(tick);
+}
+
+function animateScoreBar(barEl, pts, color) {
+  barEl.style.background = color;
+  barEl.style.width = '0%';
+  void barEl.offsetWidth;
+  setTimeout(() => { barEl.style.width = (pts/500*100) + '%'; }, 80);
+}
+
+/* ─────────────────────────────────────────
+   🗺️  MINI-ŽEMĖLAPIO DIDINIMAS / MAŽINIMAS
+───────────────────────────────────────── */
+let miniMapExpanded = false;
+
+function toggleMiniMap() {
+  miniMapExpanded = !miniMapExpanded;
+  const wrap = document.getElementById('mini-map-wrap');
+  const btn  = document.getElementById('map-toggle-btn');
+  wrap.classList.toggle('expanded', miniMapExpanded);
+  btn.textContent = miniMapExpanded ? '✕ Mažinti' : '⛶ Didinti';
+  setTimeout(() => gameMap && gameMap.invalidateSize(), 320);
+}
+
+function handleMapAreaClick(e) {
+  if (!miniMapExpanded && !e.target.closest('.leaflet-control')) {
+    toggleMiniMap();
+  }
+}
+
+/* ─────────────────────────────────────────
+   📷  GYVŪNO THUMBNAIL DIDINIMAS
+───────────────────────────────────────── */
+function toggleThumb() {
+  document.getElementById('animal-thumb-wrap').classList.toggle('enlarged');
+}
+
+/* ─────────────────────────────────────────
+   🌐  GOOGLE STREET VIEW PANORAMA
+───────────────────────────────────────── */
+function initStreetView() {
+  if (!gmapsReady) return;
+
+  svService = new google.maps.StreetViewService();
+  svPano = new google.maps.StreetViewPanorama(
+    document.getElementById('streetview'), {
+      addressControl    : false,
+      showRoadLabels    : false,
+      enableCloseButton : false,
+      fullscreenControl : false,
+      motionTracking    : false,
+      linksControl      : true,
+      panControl        : true,
+      zoomControl       : true,
+    }
+  );
+}
+
+function loadStreetView(lat, lng) {
+  const svEl = document.getElementById('streetview');
+  const fbEl = document.getElementById('photo-fallback');
+  const notice = document.getElementById('sv-notice');
+
+  if (!gmapsReady || !svService) {
+    // Google Maps API not loaded — show fallback photo
+    svEl.style.display   = 'none';
+    fbEl.style.display   = 'flex';
+    notice.style.display = 'block';
+    return;
+  }
+
+  // Try to find nearest Street View panorama
+  svService.getPanorama({
+    location: { lat, lng },
+    radius  : CFG.svRadius,
+    preference: google.maps.StreetViewPreference.NEAREST,
+    source  : google.maps.StreetViewSource.OUTDOOR,
+  }, (data, status) => {
+    if (status === google.maps.StreetViewStatus.OK) {
+      // Found a panorama!
+      svEl.style.display   = 'block';
+      fbEl.style.display   = 'none';
+      notice.style.display = 'none';
+      svPano.setPano(data.location.pano);
+      svPano.setPov({ heading: 0, pitch: 0 });
+      svPano.setZoom(0);
+    } else {
+      // No panorama — fallback to static photo
+      svEl.style.display   = 'none';
+      fbEl.style.display   = 'flex';
+      notice.style.display = 'block';
+    }
+  });
+}
+
+/* ─────────────────────────────────────────
+   🏁  PRADĖTI ŽAIDIMĄ
+───────────────────────────────────────── */
+function startGame() {
+  const nick  = document.getElementById('inp-nick').value.trim();
+  const name  = document.getElementById('inp-name').value.trim();
+  const email = document.getElementById('inp-email').value.trim();
+  const err   = document.getElementById('form-error');
+
+  if (nick.length < 2)     { err.textContent='⚠️ Įveskite slapyvardį (bent 2 simboliai).'; err.style.display='block'; return; }
+  if (name.length < 2)     { err.textContent='⚠️ Įveskite vardą ir pavardę.';              err.style.display='block'; return; }
+  if (!email.includes('@')){ err.textContent='⚠️ Įveskite teisingą el. pašto adresą.';    err.style.display='block'; return; }
+  err.style.display = 'none';
+
+  G = { nick, fullName:name, email, qi:0, totalScore:0, history:[], submitted:false };
+
+  // Init game map once
+  if (!gameMap) {
+    gameMap = L.map('map', { zoomControl:true, attributionControl:false }).setView([20,0], 2);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom:18 }).addTo(gameMap);
+    gameMap.on('click', onMapClick);
+  } else {
+    if (guessMarker) { gameMap.removeLayer(guessMarker); guessMarker = null; }
+    gameMap.setView([20,0], 2);
+  }
+
+  // Init Street View panorama once
+  if (!svPano && gmapsReady) initStreetView();
+
+  // Reset mini-map to collapsed state on new game
+  if (miniMapExpanded) toggleMiniMap();
+
+  show('s-game');
+  renderRound();
+}
+
+/* ─────────────────────────────────────────
+   🔄  RODYTI RUNDĄ
+───────────────────────────────────────── */
+function renderRound() {
+  currentGuessLL = null;
+  const a     = ANIMALS[G.qi];
+  const total = ANIMALS.length;
+
+  document.getElementById('g-num').textContent  = `${G.qi+1} / ${total}`;
+  document.getElementById('g-score').textContent = `${G.totalScore} pt.`;
+  document.getElementById('g-prog').style.width  = `${(G.qi/total)*100}%`;
+
+  // Set animal thumbnail + name
+  document.getElementById('g-img').src = a.image;
+  document.getElementById('g-img-fallback').src = a.image;
+  document.getElementById('animal-thumb-name').textContent = a.name;
+
+  // Reset thumbnail to small
+  document.getElementById('animal-thumb-wrap').classList.remove('enlarged');
+
+  // Load Street View for this animal's location
+  loadStreetView(a.lat, a.lng);
+
+  const btn = document.getElementById('btn-confirm');
+  btn.textContent   = 'Spustelk žemėlapyje, kad pažymėtum vietą';
+  btn.disabled      = true;
+  btn.style.opacity = '.38';
+  btn.style.background = 'var(--gold)';
+
+  // Reset mini-map label
+  const lbl = document.getElementById('mini-map-label');
+  if (lbl) lbl.textContent = '🗺️ SPUSTELK VIETĄ';
+
+  if (guessMarker) { gameMap.removeLayer(guessMarker); guessMarker = null; }
+  gameMap.setView([20,0], 2);
+
+  // Collapse mini-map between rounds
+  if (miniMapExpanded) toggleMiniMap();
+  setTimeout(() => gameMap && gameMap.invalidateSize(), 360);
+}
+
+/* ─────────────────────────────────────────
+   🖱️  KLIKTELĖJIMAS ANT ŽEMĖLAPIO
+───────────────────────────────────────── */
+function onMapClick(e) {
+  currentGuessLL = e.latlng;
+
+  if (guessMarker) {
+    guessMarker.setLatLng(e.latlng);
+  } else {
+    guessMarker = L.marker(e.latlng, { icon:makePin('var(--red)') }).addTo(gameMap);
+  }
+
+  // Update mini-map label
+  const lbl = document.getElementById('mini-map-label');
+  if (lbl) lbl.textContent = '📍 Vieta pažymėta';
+
+  const btn = document.getElementById('btn-confirm');
+  btn.textContent   = 'Patvirtinti šią vietą ✓';
+  btn.disabled      = false;
+  btn.style.opacity = '1';
+}
+
+/* ─────────────────────────────────────────
+   ✅  PATVIRTINTI SPĖJIMĄ
+───────────────────────────────────────── */
+function confirmGuess() {
+  if (!currentGuessLL) return;
+
+  const a      = ANIMALS[G.qi];
+  const distKm = haversineKm(currentGuessLL.lat, currentGuessLL.lng, a.lat, a.lng);
+  const pts    = calcScore(distKm);
+  const color  = scoreColor(pts);
+
+  G.totalScore += pts;
+  G.history.push({ animal:a, guessLat:currentGuessLL.lat, guessLng:currentGuessLL.lng, distKm, pts, color });
+
+  const sl = document.getElementById('g-score');
+  sl.style.color = color;
+  setTimeout(() => { sl.style.color = 'var(--gold)'; }, 1000);
+
+  showRoundResult(a, currentGuessLL, distKm, pts, color);
+}
+
+/* ─────────────────────────────────────────
+   🗺️  REZULTATŲ EKRANAS (PER RUNDA)
+───────────────────────────────────────── */
+function showRoundResult(animal, guessLL, distKm, pts, color) {
+  const total = ANIMALS.length;
+
+  document.getElementById('rr-num').textContent    = `${G.qi+1} / ${total}`;
+  document.getElementById('rr-score').textContent  = `${G.totalScore} pt.`;
+  document.getElementById('rr-prog').style.width   = `${((G.qi+1)/total)*100}%`;
+  document.getElementById('rr-animal').textContent  = animal.name;
+  document.getElementById('rr-region').textContent  = `📍 ${animal.region}`;
+  document.getElementById('rr-context').textContent = `${distContext(distKm)} · ${fmtDist(distKm)}`;
+  document.getElementById('rr-context').style.color = color;
+
+  const ptsEl = document.getElementById('rr-pts');
+  ptsEl.innerHTML  = `0 <span>taškų</span>`;
+  ptsEl.style.color = color;
+
+  document.getElementById('btn-next-round').textContent =
+    G.qi === ANIMALS.length - 1 ? 'Žiūrėti galutinį rezultatą →' : 'Kitas gyvūnas →';
+
+  show('s-round-result');
+
+  // Init result map once
+  if (!resultMap) {
+    resultMap = L.map('result-map', { zoomControl:false, attributionControl:false });
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom:18 }).addTo(resultMap);
+  } else {
+    if (rrGuessMarker)   resultMap.removeLayer(rrGuessMarker);
+    if (rrCorrectMarker) resultMap.removeLayer(rrCorrectMarker);
+    if (rrLine)          resultMap.removeLayer(rrLine);
+  }
+
+  rrGuessMarker   = L.marker([guessLL.lat, guessLL.lng], { icon:makePin('var(--red)', 20) })
+    .bindPopup('Tavo spėjimas', { closeButton:false }).addTo(resultMap);
+  rrCorrectMarker = L.marker([animal.lat, animal.lng], { icon:makePin('var(--green)', 20) })
+    .bindPopup(`<b>${esc(animal.name)}</b><br><span style="color:var(--muted)">${esc(animal.region)}</span>`, { closeButton:false })
+    .addTo(resultMap);
+  rrLine = L.polyline(
+    [[guessLL.lat, guessLL.lng], [animal.lat, animal.lng]],
+    { color:'var(--gold)', weight:2, dashArray:'6 4', opacity:.75 }
+  ).addTo(resultMap);
+
+  setTimeout(() => {
+    resultMap.invalidateSize();
+    resultMap.fitBounds(
+      L.latLngBounds([guessLL.lat, guessLL.lng], [animal.lat, animal.lng]).pad(0.35)
+    );
+    rrCorrectMarker.openPopup();
+  }, 80);
+
+  const bar = document.getElementById('rr-bar');
+  animateScoreBar(bar, pts, color);
+  setTimeout(() => animateCount(ptsEl.childNodes[0], 0, pts, 700), 100);
+}
+
+/* ─────────────────────────────────────────
+   ➡️  KITA RUNDA
+───────────────────────────────────────── */
+function nextRound() {
+  G.qi++;
+  if (G.qi >= ANIMALS.length) {
+    showFinal();
+  } else {
+    show('s-game');
+    renderRound();
+    setTimeout(() => gameMap.invalidateSize(), 80);
+  }
+}
+
+/* ─────────────────────────────────────────
+   🏆  GALUTINIS REZULTATAS
+───────────────────────────────────────── */
+function showFinal() {
+  const s   = G.totalScore;
+  const max = ANIMALS.length * 500;
+  const pct = s / max;
+
+  let grade, msg;
+  if      (pct >= 0.9) { grade='🌍 Geografijos genijus!';   msg='Neticima! Kone kiekvienas gyvūnas rastas su puikiu tikslumu. Tu tikras pasaulio gamtos žinovas!'; }
+  else if (pct >= 0.7) { grade='⭐ Puikus keliautojas!';    msg='Labai geras rezultatas! Matosi, kad gerai pažįsti pasaulio laukinę gamtą ir jos buveines.'; }
+  else if (pct >= 0.5) { grade='🗺️ Geras geografas';       msg='Neblogas bandymas! Su šiek tiek daugiau praktikos taptum tikru čempionu.'; }
+  else if (pct >= 0.3) { grade='🌱 Smalsus tyrinėtojas';   msg='Geras bandymas! Paroda padės sužinoti daugiau apie šių gyvūnų buveines pasaulyje.'; }
+  else                  { grade='🔍 Geografijos studentas'; msg='Žaidimas nebuvo lengvas! Tačiau dabar žinai, kur ieškoti šių nuostabių gyvūnų.'; }
+
+  document.getElementById('f-score').textContent = 0;
+  document.getElementById('f-grade').textContent = grade;
+  document.getElementById('f-msg').textContent   = msg;
+
+  const ul = document.getElementById('f-rounds');
+  ul.innerHTML = G.history.map((r, i) => `
+    <li class="round-row">
+      <span class="round-num" style="color:${r.color}">${i+1}</span>
+      <span class="round-name">${esc(r.animal.name)}</span>
+      <span class="round-dist">${fmtDist(r.distKm)}</span>
+      <span class="round-pts" style="color:${r.color}">${r.pts}</span>
+    </li>`).join('');
+
+  document.getElementById('f-submit-sec').style.display = 'block';
+  document.getElementById('f-ok').style.display         = 'none';
+  document.getElementById('btn-final-submit').disabled  = false;
+  document.getElementById('btn-final-submit').textContent = 'Pateikti rezultatą 🏆';
+
+  show('s-final');
+  setTimeout(() => { animateCount(document.getElementById('f-score'), 0, s, 1600); }, 200);
+  buildRecapMap();
+}
+
+/* ─────────────────────────────────────────
+   🗺️  RECAP ŽEMĖLAPIS (VISI SPĖJIMAI)
+───────────────────────────────────────── */
+function buildRecapMap() {
+  if (recapMap) { recapMap.remove(); recapMap = null; }
+
+  recapMap = L.map('recap-map', { zoomControl:false, attributionControl:false, dragging:true, scrollWheelZoom:false });
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom:18 }).addTo(recapMap);
+
+  const allPoints = [];
+
+  G.history.forEach((r, i) => {
+    const n = i + 1;
+    L.marker([r.animal.lat, r.animal.lng], { icon:makeNumberPin(n, '#34d399') })
+      .bindPopup(`<b>${esc(r.animal.name)}</b><br><span style="color:var(--muted)">${esc(r.animal.region)}</span><br><b style="color:#34d399">${r.pts} taškų</b>`, { closeButton:false })
+      .addTo(recapMap);
+
+    const sameSpot = r.distKm < 0.5;
+    if (!sameSpot) {
+      L.marker([r.guessLat, r.guessLng], { icon:makeNumberPin(n, '#f87171') })
+        .bindPopup(`<b>#${n} — Tavo spėjimas</b><br>${fmtDist(r.distKm)} nuo tikros vietos`, { closeButton:false })
+        .addTo(recapMap);
+    }
+
+    L.polyline(
+      [[r.guessLat, r.guessLng], [r.animal.lat, r.animal.lng]],
+      { color:r.color, weight:1.5, dashArray:'5 4', opacity:.6 }
+    ).addTo(recapMap);
+
+    allPoints.push([r.animal.lat, r.animal.lng], [r.guessLat, r.guessLng]);
+  });
+
+  setTimeout(() => {
+    recapMap.invalidateSize();
+    recapMap.fitBounds(L.latLngBounds(allPoints).pad(0.1));
+  }, 80);
+}
+
+/* ─────────────────────────────────────────
+   📤  PATEIKTI REZULTATĄ
+───────────────────────────────────────── */
+async function submitScore() {
+  if (G.submitted) return;
+  const btn = document.getElementById('btn-final-submit');
+  btn.disabled    = true;
+  btn.textContent = 'Pateikiama…';
+
+  const payload = {
+    gameType  : CFG.gameType,
+    nickname  : G.nick,
+    fullName  : G.fullName,
+    email     : G.email,
+    score     : G.totalScore,
+    total     : ANIMALS.length * 500,
+    rounds    : JSON.stringify(G.history.map(r => ({ name:r.animal.name, dist:Math.round(r.distKm), pts:r.pts }))),
+    timestamp : new Date().toISOString(),
+  };
+
+  if (!CFG.scriptUrl) {
+    const arr = JSON.parse(localStorage.getItem('geo_scores')||'[]');
+    arr.push({ nickname:G.nick, score:G.totalScore, total:ANIMALS.length*500 });
+    localStorage.setItem('geo_scores', JSON.stringify(arr));
+    G.submitted = true;
+    document.getElementById('f-submit-sec').style.display = 'none';
+    document.getElementById('f-ok').style.display         = 'block';
+    return;
+  }
+
+  try {
+    await fetch(CFG.scriptUrl, { method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+    G.submitted = true;
+    document.getElementById('f-submit-sec').style.display = 'none';
+    document.getElementById('f-ok').style.display         = 'block';
+  } catch(e) {
+    btn.disabled    = false;
+    btn.textContent = 'Bandyti dar kartą';
+    alert('Klaida pateikiant rezultatą. Patikrinkite interneto ryšį.');
+  }
+}
+
+/* ─────────────────────────────────────────
+   📊  LYDERIŲ LENTELĖ
+───────────────────────────────────────── */
+async function goLeaderboard() {
+  show('s-lb');
+  const body = document.getElementById('lb-body');
+  body.innerHTML = '<div class="loading"><div class="spin"></div>Kraunama…</div>';
+  let scores = [];
+
+  if (!CFG.scriptUrl) {
+    scores = JSON.parse(localStorage.getItem('geo_scores')||'[]').sort((a,b)=>b.score-a.score);
+  } else {
+    try {
+      const r = await fetch(CFG.scriptUrl + '?action=lb&gameType=geo');
+      scores  = await r.json();
+    } catch(e) {
+      body.innerHTML = `<div class="card" style="text-align:center;padding:36px"><p style="color:var(--muted);font-size:14px">Nepavyko gauti duomenų.<br>Patikrinkite interneto ryšį.</p><div style="height:12px"></div><button class="btn btn-ghost" style="width:auto;padding:10px 20px" onclick="goLeaderboard()">Bandyti dar kartą</button></div>`;
+      return;
+    }
+  }
+  renderLB(scores);
+}
+
+function renderLB(scores) {
+  const body = document.getElementById('lb-body');
+  if (!scores.length) {
+    body.innerHTML = `<div class="card" style="text-align:center;padding:44px"><p style="font-size:32px;margin-bottom:10px">🎯</p><p style="color:var(--muted)">Kol kas nėra rezultatų.<br>Būkite pirmasis!</p></div>`;
+    return;
+  }
+  const top = scores[0]?.score || 1;
+  const MAX = ANIMALS.length * 500;
+  const em  = ['🥇','🥈','🥉'];
+  body.innerHTML = `
+    <div class="card">
+      <ul class="lb-list">
+        ${scores.map((s,i) => `
+          <li class="lb-row">
+            <span class="lb-rank ${i<3?'r'+(i+1):''}">${i<3?em[i]:i+1}</span>
+            <div class="lb-info">
+              <div class="lb-name ${s.nickname===G.nick?'me':''}">${esc(s.nickname||s.name)}${s.nickname===G.nick?' ← Jūs':''}</div>
+              <div class="lb-bar"><div class="lb-bar-fill" style="width:${Math.round(s.score/top*100)}%"></div></div>
+            </div>
+            <span class="lb-pts">${s.score}</span>
+            <span class="lb-pct">${Math.round(s.score/MAX*100)}%</span>
+          </li>`).join('')}
+      </ul>
+    </div>
+    <div style="margin-top:10px;text-align:center;font-size:12px;color:var(--muted)">Iš viso dalyvių: <b>${scores.length}</b></div>`;
+}
+
+/* ─────────────────────────────────────────
+   🔁  ŽAISTI DAR KARTĄ
+───────────────────────────────────────── */
+function goWelcome() {
+  G = newState();
+  ['inp-nick','inp-name','inp-email'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('form-error').style.display = 'none';
+  if (guessMarker && gameMap) { gameMap.removeLayer(guessMarker); guessMarker = null; }
+  show('s-welcome');
+}
+
+/* ─────────────────────────────────────────
+   🛡️  HELPERS
+───────────────────────────────────────── */
+function esc(s) {
+  const d = document.createElement('div');
+  d.appendChild(document.createTextNode(s));
+  return d.innerHTML;
+}
+
+// Init label
+document.getElementById('lbl-exh').textContent = CFG.exhibitionName;
+
+// Allow Enter on form fields
+['inp-nick','inp-name','inp-email'].forEach(id => {
+  document.getElementById(id).addEventListener('keydown', e => { if(e.key==='Enter') startGame(); });
+});
+</script>
+
+<!-- Google Maps JavaScript API (loaded async) -->
+<script>
+function onGoogleMapsReady() {
+  gmapsReady = true;
+}
+
+(function() {
+  const key = CFG.googleApiKey;
+  if (!key || key === "ĮRAŠYK_SAVO_API_RAKTĄ_ČIA") {
+    console.warn("⚠️ Google Maps API raktas nenustatytas. Street View neveiks — bus rodoma statinė nuotrauka.");
+    return;
+  }
+  const s = document.createElement('script');
+  s.src = `https://maps.googleapis.com/maps/api/js?key=${key}&callback=onGoogleMapsReady`;
+  s.async = true;
+  s.defer = true;
+  document.head.appendChild(s);
+})();
+</script>
+</body>
+</html>

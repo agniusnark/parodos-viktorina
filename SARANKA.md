@@ -1,110 +1,132 @@
-# Viktorinos žaidimo sąranka
+# Parodos žaidimų sąranka
 
-## 📁 Failų struktūra
+Du žaidimai veikia **tuo pačiu metu** per visą parodą.
 
 ```
 viktorina/
-├── viktorina.html          ← Pagrindinis žaidimas
-├── google-apps-script.js   ← Backend kodas (Google Sheets)
-├── SARANKA.md              ← Ši instrukcija
+├── index.html               ← Pagrindinis puslapis (pasirinkimas)
+├── viktorina.html           ← 1. Viktorina (28 klausimai su atsakymais)
+├── geoguess.html            ← 2. Geografijos žaidimas (GeoGuessr stilius)
+├── google-apps-script.js    ← Google Sheets backend (v3 — abu žaidimai)
+├── SARANKA.md               ← Ši instrukcija
 └── images/
-    ├── 1_eglinis_tetervas.jpg
-    ├── 2_baltasis_kurtinukas.jpg
-    ├── 3_kea.jpg
-    ├── 4_kojote.jpg
-    ├── 5_erelis_sede.jpg
-    ├── 6_erelis_skrenda.jpg
-    ├── 7_geltonakis_pingvinas.jpg
-    ├── 8_geltonakis_pingvinas_2.jpg
-    ├── 9.jpg               ← Jūsų 9-asis gyvūnas
-    └── 10.jpg              ← Jūsų 10-asis gyvūnas
+    └── (visos nuotraukos)
 ```
 
 ---
 
-## 1️⃣  Nuotraukų pridėjimas
+## 1️⃣ Google Apps Script — SVARBU: atnaujinti
 
-Nukopijuokite savo nuotraukas į `images/` aplanką su tiksliai tokiais pavadinimais kaip nurodyta aukščiau.
+Kadangi scenarijus buvo atnaujintas (v3), reikia jį įkelti iš naujo.
 
-> **Patarimas:** Nuotraukos geriausiai atrodo santykiu 4:3 arba 3:2.
-> Rekomenduojamas dydis: 1200×900 px, max 500 KB (greitesniam krovimui).
-
----
-
-## 2️⃣  Klausimų 9 ir 10 papildymas
-
-Atidarykite `viktorina.html` teksto redaktoriuje ir raskite šią vietą:
-
-```javascript
-// ⬇️ PAPILDYKITE klausimus 9–10, kai turėsite daugiau nuotraukų:
-{
-  image   : "images/9.jpg",
-  question: "KLAUSIMAS 9 — pakeiskite šį tekstą",
-  ...
-```
-
-Pakeiskite klausimą, atsakymus ir teisingą indeksą (0=A, 1=B, 2=C, 3=D).
-
----
-
-## 3️⃣  Lyderių lentelės sąranka (Google Sheets)
-
-### Žingsniai:
-
-1. Eikite į [sheets.google.com](https://sheets.google.com) → sukurkite naują dokumentą
+**Žingsniai:**
+1. Atidarykite savo Google Sheets dokumentą
 2. Viršuje: **Plėtiniai → Apps Script**
-3. Ištrinkite viską, kas yra, ir įklijuokite `google-apps-script.js` turinį
-4. Spauskite 💾 (Išsaugoti)
-5. Spauskite **„Įdiegti" → „Naujas diegimas"**:
-   - Tipas: Žiniatinklio programa
-   - Vykdyti kaip: **Aš**
-   - Kas gali pasiekti: **Visi**
-6. Patvirtinkite leidimus (gali prašyti Google paskyros patvirtinimo)
-7. Nukopijuokite rodomą **URL** (atrodo taip: `https://script.google.com/macros/s/ABC.../exec`)
+3. Ištrinkite **viską** ir įklijuokite `google-apps-script.js` turinį
+4. Spauskite 💾 **Išsaugoti**
+5. Spauskite **„Diegti" → „Tvarkyti diegimus"**
+6. Prie esamo diegimo spauskite ✏️ **Redaguoti** → pasirinkite naują versiją → **Įdiegti**
+   > ⚠️ Naudokite **esamą diegimą** (ne naują!) — tada URL išlieka tas pats ir nieko nereikia keisti HTML failuose.
 
-### URL įklijavimas į žaidimą:
-
-Atidarykite `viktorina.html`, raskite:
-
-```javascript
-scriptUrl: "",
-```
-
-Ir įklijuokite:
-
-```javascript
-scriptUrl: "https://script.google.com/macros/s/JŪSŲ_URL_ČIA/exec",
-```
+**Rezultatas Google Sheets:** atsiras **du lapai**:
+- `Geo_Rezultatai` — geografijos žaidimo rezultatai
+- `Quiz_Rezultatai` — viktorinos rezultatai
 
 ---
 
-## 4️⃣  Talpinimas internete (GitHub Pages — nemokama)
+## 2️⃣ Google Maps API raktas (Street View)
+
+Geografijos žaidimas naudoja **Google Street View** 360° panoramas. Tam reikia API rakto.
+
+**Žingsniai:**
+1. Eikite į [Google Cloud Console](https://console.cloud.google.com)
+2. Sukurkite naują projektą (arba naudokite esamą)
+3. Eikite į **APIs & Services → Library**
+4. Įjunkite **Maps JavaScript API** (tai apima ir Street View)
+5. Eikite į **APIs & Services → Credentials**
+6. Spauskite **Create Credentials → API Key**
+7. Nukopijuokite raktą
+
+**Rakto įrašymas:**
+Atidarykite `geoguess.html`, raskite eilutę:
+```javascript
+googleApiKey : "ĮRAŠYK_SAVO_API_RAKTĄ_ČIA",
+```
+Pakeiskite į savo raktą:
+```javascript
+googleApiKey : "AIzaSy..._jūsų_raktas",
+```
+
+**Kaina:** Google suteikia **$200/mėn. nemokamų kreditų** — tai ~28 000 Street View užklausų. Parodai to daugiau nei pakanka.
+
+**Svarbu — API rakto apsauga:**
+- Cloud Console → API Key → **Restrict key**
+- Pridėkite HTTP referer ribojimą: `https://JŪSŲ_VARDAS.github.io/*`
+- Tai apsaugos nuo neteisėto naudojimo
+
+> 💡 **Jei API rakto nėra** — žaidimas vis tiek veiks! Vietoj Street View bus rodoma statinė gyvūno nuotrauka.
+
+---
+
+## 3️⃣ Failų įkėlimas į internetą (GitHub Pages)
 
 1. Sukurkite nemokamą paskyrą [github.com](https://github.com)
-2. Sukurkite naują **repository** (pvz. `parodos-viktorina`)
-3. Įkelkite visus failus iš `viktorina/` aplanko
-4. Eikite į **Settings → Pages → Source: main branch**
-5. Po kelių minučių žaidimas bus pasiekiamas adresu:
-   `https://JŪSŲ_VARDAS.github.io/parodos-viktorina/viktorina.html`
+2. Sukurkite naują **repository** (pvz. `parodos-zaidimas`)
+3. Įkelkite **visus failus** iš `viktorina/` aplanko (įskaitant `images/` aplanką)
+4. Eikite į **Settings → Pages → Source: main branch / root**
+5. Po kelių minučių žaidimai bus pasiekiami:
 
-Šį adresą galite siųsti dalyviams el. paštu arba kaip QR kodą parodos metu!
-
----
-
-## 5️⃣  Parodos pabaigoje — nugalėtojo paskelbimas
-
-Atidarykite savo Google Sheets dokumentą — ten matysite visų dalyvių rezultatus. Lentelė automatiškai rūšiuoja pagal taškus.
+| Žaidimas | URL |
+|---|---|
+| Pagrindinis puslapis | `https://JŪSŲ_VARDAS.github.io/parodos-zaidimas/` |
+| Viktorina | `https://JŪSŲ_VARDAS.github.io/parodos-zaidimas/viktorina.html` |
+| Geografija | `https://JŪSŲ_VARDAS.github.io/parodos-zaidimas/geoguess.html` |
 
 ---
 
-## ⚙️  Papildomi nustatymai
+## 4️⃣ QR kodų generavimas
 
-`viktorina.html` viršuje esančiame `CFG` objekte galite keisti:
+Rekomenduojama turėti **tris QR kodus**:
 
+| QR kodas | Nukreipia į | Kur naudoti |
+|---|---|---|
+| **Pagrindinis** | `index.html` | Pagrindinė stotelė galerijoje |
+| **Viktorina** | `viktorina.html` | Prie viktorinos stotelės |
+| **Geografija** | `geoguess.html` | Prie geo žaidimo stotelės |
+
+Naudokite nemokamą generatorių: [qr-code-generator.com](https://www.qr-code-generator.com)
+
+---
+
+## 5️⃣ Rezultatų peržiūra parodos metu
+
+Atidarykite Google Sheets — rezultatai atsiranda realiu laiku:
+- `Geo_Rezultatai` — geografijos čempionai (taškai iš 5000)
+- `Quiz_Rezultatai` — viktorinos čempionai (taškai iš 28)
+
+---
+
+## 6️⃣ Konfigūracijos keitimas
+
+Abiejų žaidimų pradžioje yra `CFG` objektas — keiskite pagal poreikį:
+
+**viktorina.html:**
 ```javascript
 const CFG = {
-  exhibitionName: "Fotografijų paroda 2026",  // Parodos pavadinimas
-  prize         : "50€ vertės foto spaudinį", // Prizas
-  scriptUrl     : "",                          // Google Apps Script URL
+  exhibitionName : "Fotografijų paroda 2026",
+  prize          : "50€ vertės FotoFoto kuponą",
+  scriptUrl      : "https://script.google.com/...",
 };
 ```
+
+**geoguess.html:**
+```javascript
+const CFG = {
+  exhibitionName : "Fotografijų paroda 2026",
+  scriptUrl      : "https://script.google.com/...",
+  googleApiKey   : "AIzaSy..._jūsų_raktas",
+  svRadius       : 50000,  // Paieškos spindulys metrais (50 km)
+};
+```
+
+> `svRadius` — kiek metrų nuo tikslios koordinatės ieškoti artimiausios Street View panoramos. Laukinėje gamtoje (Fiordland, Jukonas) kartais artimiausia panorama bus kelyje, ne pačioje vietoje. 50 km turėtų pakakti daugumai vietų.
